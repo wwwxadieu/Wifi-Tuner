@@ -1,13 +1,16 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import net from "node:net";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import { isWindows } from "./runPowerShell";
 import { getNetworkInfo } from "./networkInfo";
-import type { BackupConfig, DnsPresetKey, OptimizationSettings, OptimizationStatusResult } from "./types";
+import type { BackupConfig, OptimizationSettings, OptimizationStatusResult } from "./types";
 
 const execAsync = promisify(exec);
+
+const VALID_TCP_LEVELS = new Set(["Normal", "Disabled", "Experimental", "Restricted"]);
 
 // Path to persistent backup file
 function getBackupFilePath(): string {
@@ -95,24 +98,61 @@ export async function getOptimizationStatus(): Promise<OptimizationStatusResult>
   };
 }
 
-export function resolveDnsPreset(preset: DnsPresetKey, customDns?: string[]): string[] {
-  switch (preset) {
+function isValidIPv4(value: unknown): value is string {
+  return typeof value === "string" && net.isIPv4(value);
+}
+
+function isValidDnsList(value: unknown): value is string[] {
+  return Array.isArray(value) && value.length > 0 && value.every(isValidIPv4);
+}
+
+// Xác định danh sách DNS sẽ áp dụng từ settings do client gửi lên.
+// Trả về:
+//   [] (mảng rỗng)  -> reset DNS về DHCP (tự động)
+//   string[]        -> danh sách DNS hợp lệ cần áp dụng
+//   null            -> cấu hình không hợp lệ, PHẢI từ chối request (không được
+//                       âm thầm bỏ qua bước đổi DNS như trước — đó là lỗi đã gặp
+//                       khi DNS Benchmark gửi các preset lạ như "opendns").
+// customDns (nếu có) luôn được validate là địa chỉ IPv4 hợp lệ trước khi dùng —
+// đây cũng là hàng rào chặn chèn lệnh PowerShell, vì giá trị đã qua validate
+// không còn chứa ký tự đặc biệt nào để thoát khỏi ngữ cảnh script.
+function resolveDnsList(settings: OptimizationSettings): string[] | null {
+  if (settings.dnsPreset === "dhcp") return [];
+
+  if (settings.customDns !== undefined) {
+    return isValidDnsList(settings.customDns) ? settings.customDns : null;
+  }
+
+  switch (settings.dnsPreset) {
     case "cloudflare":
       return ["1.1.1.1", "1.0.0.1"];
     case "google":
       return ["8.8.8.8", "8.8.4.4"];
     case "quad9":
       return ["9.9.9.9", "149.112.112.112"];
-    case "custom":
-      return customDns && customDns.length > 0 ? customDns : ["1.1.1.1", "1.0.0.1"];
-    case "dhcp":
     default:
-      return [];
+      return null;
   }
 }
 
-// Executes a script with UAC Elevation on Windows
-async function executeElevatedScript(scriptContent: string): Promise<{ success: boolean; message?: string; error?: string }> {
+interface ElevatedParams {
+  dns: string[] | null;
+  resetDns: boolean;
+  tcpAutoTuning: string | null;
+  powerAllowTurnOff: "Enabled" | "Disabled" | null;
+}
+
+// Thực thi script với quyền Admin (UAC) trên Windows.
+//
+// Mọi giá trị động (DNS list, TCP level, power setting) được truyền qua một
+// file JSON tạm, KHÔNG bao giờ nối chuỗi trực tiếp vào nội dung script — script
+// PowerShell chỉ đọc `$p = Get-Content $paramsFile | ConvertFrom-Json` rồi dùng
+// $p.* như object thật. Cách này loại bỏ hoàn toàn khả năng chèn lệnh PowerShell
+// qua dữ liệu người dùng, kể cả nếu bước validate ở tầng gọi có sai sót.
+async function executeElevatedScript(
+  scriptBody: string,
+  params: ElevatedParams
+): Promise<{ success: boolean; message?: string; error?: string }> {
   if (!isWindows()) {
     return { success: true, message: "[Mock Mode] Đã thực thi với quyền Admin mô phỏng." };
   }
@@ -120,15 +160,29 @@ async function executeElevatedScript(scriptContent: string): Promise<{ success: 
   const tmpDir = os.tmpdir();
   const timestamp = Date.now();
   const scriptPath = path.join(tmpDir, `wifi_tuner_elevated_${timestamp}.ps1`);
+  const paramsPath = path.join(tmpDir, `wifi_tuner_params_${timestamp}.json`);
   const resultPath = path.join(tmpDir, `wifi_tuner_result_${timestamp}.json`);
 
-  // Wrap script content to output JSON result file
+  fs.writeFileSync(paramsPath, JSON.stringify(params), "utf-8");
+
   const fullScript = `
 $ErrorActionPreference = 'Stop'
 $resultFile = "${resultPath.replace(/\\/g, "\\\\")}"
+$paramsFile = "${paramsPath.replace(/\\/g, "\\\\")}"
 
 try {
-${scriptContent}
+  $p = Get-Content -Path $paramsFile -Raw | ConvertFrom-Json
+
+  $adapter = Get-NetAdapter | Where-Object {
+    $_.InterfaceDescription -match 'Wireless|Wi-Fi|WLAN|802.11' -and $_.Status -ne 'Not Present'
+  } | Sort-Object -Property ifIndex | Select-Object -First 1
+
+  if (-not $adapter) {
+    throw "Không tìm thấy card mạng WiFi."
+  }
+
+${scriptBody}
+
   @{ success = $true; message = 'Thao tác hoàn tất thành công.' } | ConvertTo-Json -Compress | Set-Content -Path $resultFile -Encoding UTF8
 } catch {
   @{ success = $false; error = $_.Exception.Message } | ConvertTo-Json -Compress | Set-Content -Path $resultFile -Encoding UTF8
@@ -138,7 +192,6 @@ ${scriptContent}
   fs.writeFileSync(scriptPath, fullScript, "utf-8");
 
   try {
-    // Run script via PowerShell Start-Process RunAs (Triggers Windows UAC Prompt)
     const cmd = `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Start-Process powershell.exe -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File \\"${scriptPath}\\"' -Verb RunAs -Wait"`;
     await execAsync(cmd, { timeout: 45000 });
 
@@ -155,12 +208,36 @@ ${scriptContent}
     // Cleanup temporary files
     try {
       if (fs.existsSync(scriptPath)) fs.unlinkSync(scriptPath);
+      if (fs.existsSync(paramsPath)) fs.unlinkSync(paramsPath);
       if (fs.existsSync(resultPath)) fs.unlinkSync(resultPath);
     } catch {}
   }
 }
 
+const APPLY_SCRIPT_BODY = `
+  if ($p.resetDns) {
+    Set-DnsClientServerAddress -InterfaceIndex $adapter.ifIndex -ResetServerAddresses
+  } elseif ($p.dns -and @($p.dns).Count -gt 0) {
+    Set-DnsClientServerAddress -InterfaceIndex $adapter.ifIndex -ServerAddresses @($p.dns)
+  }
+
+  if ($p.tcpAutoTuning) {
+    Set-NetTCPSetting -SettingName Internet -AutoTuningLevelLocal $p.tcpAutoTuning
+  }
+
+  if ($p.powerAllowTurnOff) {
+    try {
+      Set-NetAdapterPowerManagement -Name $adapter.Name -AllowComputerToTurnOffDevice $p.powerAllowTurnOff -ErrorAction SilentlyContinue
+    } catch {}
+  }
+`;
+
 export async function applyOptimization(settings: OptimizationSettings): Promise<{ success: boolean; message?: string; error?: string }> {
+  const dnsList = resolveDnsList(settings);
+  if (dnsList === null) {
+    return { success: false, error: "Cấu hình DNS không hợp lệ (danh sách DNS phải là địa chỉ IPv4)." };
+  }
+
   if (!isWindows()) {
     // Mock execution
     const currentBackup = readBackupConfig();
@@ -188,41 +265,14 @@ export async function applyOptimization(settings: OptimizationSettings): Promise
     saveBackupConfig(backup);
   }
 
-  const dnsList = resolveDnsPreset(settings.dnsPreset, settings.customDns);
-  const dnsFormatted = dnsList.length > 0 ? `@(${dnsList.map((d) => `'${d}'`).join(",")})` : null;
+  const params: ElevatedParams = {
+    dns: dnsList.length > 0 ? dnsList : null,
+    resetDns: settings.dnsPreset === "dhcp",
+    tcpAutoTuning: settings.enableTcpTuning ? "Normal" : null,
+    powerAllowTurnOff: settings.disablePowerSave ? "Disabled" : null,
+  };
 
-  let scriptParts: string[] = [];
-
-  scriptParts.push(`
-  $adapter = Get-NetAdapter | Where-Object {
-    $_.InterfaceDescription -match 'Wireless|Wi-Fi|WLAN|802.11' -and $_.Status -ne 'Not Present'
-  } | Sort-Object -Property ifIndex | Select-Object -First 1
-
-  if (-not $adapter) {
-    throw "Không tìm thấy card mạng WiFi để tối ưu hóa."
-  }
-  `);
-
-  if (settings.dnsPreset === "dhcp") {
-    scriptParts.push(`Set-DnsClientServerAddress -InterfaceIndex $adapter.ifIndex -ResetServerAddresses`);
-  } else if (dnsFormatted) {
-    scriptParts.push(`Set-DnsClientServerAddress -InterfaceIndex $adapter.ifIndex -ServerAddresses ${dnsFormatted}`);
-  }
-
-  if (settings.enableTcpTuning) {
-    scriptParts.push(`Set-NetTCPSetting -SettingName Internet -AutoTuningLevelLocal Normal`);
-  }
-
-  if (settings.disablePowerSave) {
-    scriptParts.push(`
-    try {
-      Set-NetAdapterPowerManagement -Name $adapter.Name -AllowComputerToTurnOffDevice Disabled -ErrorAction SilentlyContinue
-    } catch {}
-    `);
-  }
-
-  const result = await executeElevatedScript(scriptParts.join("\n"));
-  return result;
+  return executeElevatedScript(APPLY_SCRIPT_BODY, params);
 }
 
 export async function restoreBackupConfig(): Promise<{ success: boolean; message?: string; error?: string }> {
@@ -236,37 +286,20 @@ export async function restoreBackupConfig(): Promise<{ success: boolean; message
     return { success: true, message: "Đã khôi phục cấu hình từ bản sao lưu (Mock mode)." };
   }
 
-  const dnsFormatted = backup.dns && backup.dns.length > 0 ? `@(${backup.dns.map((d) => `'${d}'`).join(",")})` : null;
-  const tcpLevel = backup.tcpAutoTuning || "Normal";
-  const powerSave = backup.powerAllowTurnOff === "Enabled" ? "Enabled" : "Disabled";
+  // Tệp backup do chính app ghi ra, nhưng vẫn validate lại trước khi đưa vào
+  // script chạy quyền Admin — phòng trường hợp tệp bị chỉnh sửa thủ công.
+  const dnsList = isValidDnsList(backup.dns) ? backup.dns : [];
+  const tcpLevel = VALID_TCP_LEVELS.has(backup.tcpAutoTuning) ? backup.tcpAutoTuning : "Normal";
+  const powerAllowTurnOff = backup.powerAllowTurnOff === "Enabled" ? "Enabled" : "Disabled";
 
-  let scriptParts: string[] = [];
+  const params: ElevatedParams = {
+    dns: dnsList.length > 0 ? dnsList : null,
+    resetDns: dnsList.length === 0,
+    tcpAutoTuning: tcpLevel,
+    powerAllowTurnOff,
+  };
 
-  scriptParts.push(`
-  $adapter = Get-NetAdapter | Where-Object {
-    $_.InterfaceDescription -match 'Wireless|Wi-Fi|WLAN|802.11' -and $_.Status -ne 'Not Present'
-  } | Sort-Object -Property ifIndex | Select-Object -First 1
-
-  if (-not $adapter) {
-    throw "Không tìm thấy card mạng WiFi để khôi phục."
-  }
-  `);
-
-  if (dnsFormatted) {
-    scriptParts.push(`Set-DnsClientServerAddress -InterfaceIndex $adapter.ifIndex -ServerAddresses ${dnsFormatted}`);
-  } else {
-    scriptParts.push(`Set-DnsClientServerAddress -InterfaceIndex $adapter.ifIndex -ResetServerAddresses`);
-  }
-
-  scriptParts.push(`Set-NetTCPSetting -SettingName Internet -AutoTuningLevelLocal ${tcpLevel}`);
-
-  scriptParts.push(`
-  try {
-    Set-NetAdapterPowerManagement -Name $adapter.Name -AllowComputerToTurnOffDevice ${powerSave} -ErrorAction SilentlyContinue
-  } catch {}
-  `);
-
-  const result = await executeElevatedScript(scriptParts.join("\n"));
+  const result = await executeElevatedScript(APPLY_SCRIPT_BODY, params);
   if (result.success) {
     clearBackupConfig();
   }
