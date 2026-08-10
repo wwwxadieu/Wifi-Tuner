@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import SpeedTest from "@cloudflare/speedtest";
-import { ArrowDown, ArrowUp, Zap, Play, RefreshCw, AlertCircle, Globe } from "lucide-react";
+import { ArrowDown, ArrowUp, Zap, AlertCircle } from "lucide-react";
 import StatCard from "./StatCard";
 import RealtimeSpeedChart from "./RealtimeSpeedChart";
-import { SPEED_SERVERS, runDetailedDownloadTest, runDetailedUploadTest, runFallbackSpeedProbe } from "@/lib/speedProbe";
-import type { SpeedServerRegion, SpeedUnit } from "@/lib/types";
+import { runDetailedDownloadTest, runDetailedUploadTest, runFallbackSpeedProbe, type LiveProgress } from "@/lib/speedProbe";
+import type { SpeedUnit } from "@/lib/types";
 import { formatSpeed } from "@/lib/types";
 
 type Status = "idle" | "running" | "done" | "error";
@@ -29,7 +29,6 @@ interface SamplePoint {
 
 const HISTORY_KEY = "wifituner:speed-history-v3";
 const UNIT_KEY = "wifituner:speed-unit";
-const REGION_KEY = "wifituner:speed-region";
 const HISTORY_LIMIT = 20;
 
 function loadHistory(): HistoryEntry[] {
@@ -48,12 +47,62 @@ function saveHistory(entries: HistoryEntry[]) {
   } catch {}
 }
 
+// Đo tốc độ toàn diện (download+upload+latency+jitter) bằng SDK chính thức của
+// Cloudflare — engine chính vì có tính toán theo percentile và đo packet loss,
+// đáng tin hơn nhiều so với vòng lặp fetch tự viết. `runFallbackSpeedProbe`
+// trong lib/speedProbe.ts chỉ dùng khi SDK này lỗi (ví dụ WebRTC/TURN bị chặn).
+function runOfficialSpeedTest(onProgress: (p: LiveProgress) => void): Promise<{
+  downloadBps: number;
+  uploadBps: number;
+  latencyMs: number;
+  jitterMs: number;
+}> {
+  return new Promise((resolve, reject) => {
+    const engine = new SpeedTest();
+
+    engine.onResultsChange = () => {
+      const s = engine.results.getSummary();
+      onProgress({
+        phase: s.upload !== undefined ? "upload" : s.download !== undefined ? "download" : "ping",
+        downloadBps: s.download,
+        uploadBps: s.upload,
+        latencyMs: s.latency,
+        jitterMs: s.jitter,
+        percent: 50,
+      });
+    };
+
+    engine.onFinish = (results) => {
+      const s = results.getSummary();
+      onProgress({
+        phase: "done",
+        downloadBps: s.download,
+        uploadBps: s.upload,
+        latencyMs: s.latency,
+        jitterMs: s.jitter,
+        percent: 100,
+      });
+      if (s.download === undefined && s.upload === undefined) {
+        reject(new Error("Không đo được tốc độ mạng."));
+        return;
+      }
+      resolve({
+        downloadBps: s.download ?? 0,
+        uploadBps: s.upload ?? 0,
+        latencyMs: s.latency ?? 0,
+        jitterMs: s.jitter ?? 0,
+      });
+    };
+
+    engine.onError = (message) => reject(new Error(message));
+  });
+}
+
 export default function SpeedTestPanel() {
   const [status, setStatus] = useState<Status>("idle");
   const [phase, setPhase] = useState<Phase>("ping");
   const [testType, setTestType] = useState<TestType>("all");
   const [unit, setUnit] = useState<SpeedUnit>("Mbps");
-  const [region, setRegion] = useState<SpeedServerRegion>("auto");
   const [error, setError] = useState<string | null>(null);
 
   // Live measurements
@@ -69,18 +118,11 @@ export default function SpeedTestPanel() {
     setHistory(loadHistory());
     const savedUnit = localStorage.getItem(UNIT_KEY) as SpeedUnit;
     if (savedUnit && ["Mbps", "MB/s", "Kbps"].includes(savedUnit)) setUnit(savedUnit);
-    const savedRegion = localStorage.getItem(REGION_KEY) as SpeedServerRegion;
-    if (savedRegion) setRegion(savedRegion);
   }, []);
 
   const handleUnitChange = (newUnit: SpeedUnit) => {
     setUnit(newUnit);
     localStorage.setItem(UNIT_KEY, newUnit);
-  };
-
-  const handleRegionChange = (newRegion: SpeedServerRegion) => {
-    setRegion(newRegion);
-    localStorage.setItem(REGION_KEY, newRegion);
   };
 
   const saveResultToHistory = (dl: number | null, ul: number | null, lat: number | null, jit: number | null) => {
@@ -98,7 +140,7 @@ export default function SpeedTestPanel() {
       return next;
     });
 
-    // Save to SQLite
+    // Save to SQLite (best-effort, không chặn UI nếu lỗi)
     fetch("/api/history", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -124,56 +166,41 @@ export default function SpeedTestPanel() {
     setSamples([]);
 
     const startTime = Date.now();
+    const onProgress = (p: LiveProgress) => {
+      setPhase(p.phase);
+      if (p.downloadBps !== undefined) setDownloadBps(p.downloadBps);
+      if (p.uploadBps !== undefined) setUploadBps(p.uploadBps);
+      if (p.latencyMs !== undefined) setLatency(p.latencyMs);
+      if (p.jitterMs !== undefined) setJitter(p.jitterMs);
+      setSamples((prev) => [
+        ...prev,
+        { time: (Date.now() - startTime) / 1000, downloadBps: p.downloadBps || 0, uploadBps: p.uploadBps || 0 },
+      ]);
+    };
 
     try {
       if (type === "download") {
-        const dlRes = await runDetailedDownloadTest(region, (p) => {
-          setPhase(p.phase);
-          if (p.downloadBps !== undefined) setDownloadBps(p.downloadBps);
-          if (p.latencyMs !== undefined) setLatency(p.latencyMs);
-          if (p.jitterMs !== undefined) setJitter(p.jitterMs);
-
-          setSamples((prev) => [
-            ...prev,
-            { time: (Date.now() - startTime) / 1000, downloadBps: p.downloadBps || 0, uploadBps: 0 },
-          ]);
-        });
-        setDownloadBps(dlRes.downloadBps);
-        setLatency(dlRes.latencyMs);
-        setJitter(dlRes.jitterMs);
+        const res = await runDetailedDownloadTest(onProgress);
+        setDownloadBps(res.downloadBps);
+        setLatency(res.latencyMs);
+        setJitter(res.jitterMs);
         setStatus("done");
-        saveResultToHistory(dlRes.downloadBps, null, dlRes.latencyMs, dlRes.jitterMs);
+        saveResultToHistory(res.downloadBps, null, res.latencyMs, res.jitterMs);
       } else if (type === "upload") {
-        const ulRes = await runDetailedUploadTest(region, (p) => {
-          setPhase(p.phase);
-          if (p.uploadBps !== undefined) setUploadBps(p.uploadBps);
-          if (p.latencyMs !== undefined) setLatency(p.latencyMs);
-          if (p.jitterMs !== undefined) setJitter(p.jitterMs);
-
-          setSamples((prev) => [
-            ...prev,
-            { time: (Date.now() - startTime) / 1000, downloadBps: 0, uploadBps: p.uploadBps || 0 },
-          ]);
-        });
-        setUploadBps(ulRes.uploadBps);
-        setLatency(ulRes.latencyMs);
-        setJitter(ulRes.jitterMs);
+        const res = await runDetailedUploadTest(onProgress);
+        setUploadBps(res.uploadBps);
+        setLatency(res.latencyMs);
+        setJitter(res.jitterMs);
         setStatus("done");
-        saveResultToHistory(null, ulRes.uploadBps, ulRes.latencyMs, ulRes.jitterMs);
+        saveResultToHistory(null, res.uploadBps, res.latencyMs, res.jitterMs);
       } else {
-        // Full Sequential Test
-        const res = await runFallbackSpeedProbe(region, (p) => {
-          setPhase(p.phase);
-          if (p.downloadBps !== undefined) setDownloadBps(p.downloadBps);
-          if (p.uploadBps !== undefined) setUploadBps(p.uploadBps);
-          if (p.latencyMs !== undefined) setLatency(p.latencyMs);
-          if (p.jitterMs !== undefined) setJitter(p.jitterMs);
-
-          setSamples((prev) => [
-            ...prev,
-            { time: (Date.now() - startTime) / 1000, downloadBps: p.downloadBps || 0, uploadBps: p.uploadBps || 0 },
-          ]);
-        });
+        let res;
+        try {
+          res = await runOfficialSpeedTest(onProgress);
+        } catch {
+          // SDK chính thức lỗi (ví dụ WebRTC/TURN bị chặn) — thử phương án dự phòng.
+          res = await runFallbackSpeedProbe(onProgress);
+        }
         setDownloadBps(res.downloadBps);
         setUploadBps(res.uploadBps);
         setLatency(res.latencyMs);
@@ -182,7 +209,7 @@ export default function SpeedTestPanel() {
         saveResultToHistory(res.downloadBps, res.uploadBps, res.latencyMs, res.jitterMs);
       }
     } catch (err: any) {
-      setError(err.message || "Lỗi đo tốc độ.");
+      setError(err.message || "Lỗi đo tốc độ. Kiểm tra lại kết nối mạng.");
       setStatus("error");
     }
   };
@@ -219,7 +246,6 @@ export default function SpeedTestPanel() {
 
       {/* 3 Separate Test Action Buttons */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {/* Download Test Button (Green) */}
         <button
           onClick={() => startTest("download")}
           disabled={status === "running"}
@@ -229,7 +255,6 @@ export default function SpeedTestPanel() {
           <span>🟩 Đo Download (6 giây)</span>
         </button>
 
-        {/* Upload Test Button (Red) */}
         <button
           onClick={() => startTest("upload")}
           disabled={status === "running"}
@@ -239,7 +264,6 @@ export default function SpeedTestPanel() {
           <span>🟥 Đo Upload (6 giây)</span>
         </button>
 
-        {/* Full Test Button (Blue/Indigo) */}
         <button
           onClick={() => startTest("all")}
           disabled={status === "running"}
@@ -248,28 +272,6 @@ export default function SpeedTestPanel() {
           <Zap className="h-4 w-4 fill-current" />
           <span>🚀 Đo Toàn Diện (Full)</span>
         </button>
-      </div>
-
-      {/* Region / Server Selector */}
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-hair bg-panel p-4">
-        <span className="text-xs font-semibold text-white/60 mr-2 flex items-center gap-1.5">
-          <Globe className="h-4 w-4 text-cyan-400" />
-          <span>Máy chủ đo:</span>
-        </span>
-        {SPEED_SERVERS.map((srv) => (
-          <button
-            key={srv.id}
-            onClick={() => handleRegionChange(srv.id)}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
-              region === srv.id
-                ? "border-cyan-500 bg-cyan-500/10 text-cyan-300 shadow-md"
-                : "border-hair bg-black/20 text-white/60 hover:text-white hover:border-white/20"
-            }`}
-          >
-            <span>{srv.flag}</span>
-            <span>{srv.name}</span>
-          </button>
-        ))}
       </div>
 
       {error && (
