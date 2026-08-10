@@ -9,16 +9,16 @@ interface StatCardProps {
 const HIGHLIGHT_CLASS: Record<NonNullable<StatCardProps["highlight"]>, string> = {
   accent: "text-accent",
   accent2: "text-accent2",
-  good: "text-emerald-400",
-  warn: "text-amber-400",
-  bad: "text-rose-400",
-  download: "text-emerald-400 font-bold",
-  upload: "text-rose-400 font-bold",
+  good: "text-good",
+  warn: "text-warn",
+  bad: "text-bad",
+  download: "text-download font-semibold",
+  upload: "text-upload font-semibold",
 };
 
 export default function StatCard({ label, value, sub, highlight, loading }: StatCardProps) {
   return (
-    <div className="rounded-2xl border border-hair bg-panel p-4">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-xl transition-colors hover:bg-white/[0.07]">
       <div className="text-xs uppercase tracking-wide text-white/40">{label}</div>
       <div
         className={`mt-2 text-2xl font-semibold ${highlight ? HIGHLIGHT_CLASS[highlight] : "text-white"} ${

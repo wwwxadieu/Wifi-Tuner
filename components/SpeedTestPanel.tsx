@@ -235,7 +235,7 @@ export default function SpeedTestPanel() {
               key={u}
               onClick={() => handleUnitChange(u)}
               className={`rounded-full px-3.5 py-1 font-bold transition ${
-                unit === u ? "bg-indigo-600 text-white shadow-md" : "text-white/50 hover:text-white"
+                unit === u ? "bg-accent text-white shadow-md" : "text-white/50 hover:text-white"
               }`}
             >
               {u}
@@ -249,7 +249,7 @@ export default function SpeedTestPanel() {
         <button
           onClick={() => startTest("download")}
           disabled={status === "running"}
-          className="flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-600/90 to-teal-600/90 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
+          className="flex items-center justify-center gap-2 rounded-2xl border border-good/40 bg-gradient-to-r from-good/90 to-accent2/90 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-good/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
         >
           <ArrowDown className="h-4 w-4" />
           <span>🟩 Đo Download (6 giây)</span>
@@ -258,16 +258,16 @@ export default function SpeedTestPanel() {
         <button
           onClick={() => startTest("upload")}
           disabled={status === "running"}
-          className="flex items-center justify-center gap-2 rounded-2xl border border-rose-500/40 bg-gradient-to-r from-rose-600/90 to-pink-600/90 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-rose-600/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
+          className="flex items-center justify-center gap-2 rounded-2xl border border-upload/40 bg-gradient-to-r from-upload/90 to-accent2/90 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-upload/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
         >
           <ArrowUp className="h-4 w-4" />
-          <span>🟥 Đo Upload (6 giây)</span>
+          <span>🔵 Đo Upload (6 giây)</span>
         </button>
 
         <button
           onClick={() => startTest("all")}
           disabled={status === "running"}
-          className="flex items-center justify-center gap-2 rounded-2xl border border-indigo-500/40 bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
+          className="flex items-center justify-center gap-2 rounded-2xl border border-accent/40 bg-gradient-to-r from-accent to-accent2 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-accent/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
         >
           <Zap className="h-4 w-4 fill-current" />
           <span>🚀 Đo Toàn Diện (Full)</span>
@@ -275,9 +275,9 @@ export default function SpeedTestPanel() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-300 flex items-center justify-between">
+        <div className="rounded-xl border border-bad/40 bg-bad/10 px-4 py-3 text-sm text-bad flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+            <AlertCircle className="h-4 w-4 shrink-0 text-bad" />
             <span>{error}</span>
           </div>
           <button onClick={() => startTest("all")} className="underline text-xs hover:text-white">Thử lại</button>
@@ -323,11 +323,11 @@ export default function SpeedTestPanel() {
                 <span className="text-white/40 font-mono text-xs">
                   {new Date(entry.at).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}
                 </span>
-                <span className="text-emerald-400 font-bold flex items-center gap-1">
+                <span className="text-download font-bold flex items-center gap-1">
                   <ArrowDown className="h-3.5 w-3.5" />
                   {formatSpeed(entry.downloadBps, unit)}
                 </span>
-                <span className="text-rose-400 font-bold flex items-center gap-1">
+                <span className="text-upload font-bold flex items-center gap-1">
                   <ArrowUp className="h-3.5 w-3.5" />
                   {formatSpeed(entry.uploadBps, unit)}
                 </span>

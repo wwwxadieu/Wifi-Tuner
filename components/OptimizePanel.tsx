@@ -118,10 +118,10 @@ export default function OptimizePanel() {
         <div
           className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm transition-all ${
             feedback.type === "good"
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+              ? "border-good/30 bg-good/10 text-good"
               : feedback.type === "bad"
-              ? "border-rose-500/30 bg-rose-500/10 text-rose-400"
-              : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
+              ? "border-bad/30 bg-bad/10 text-bad"
+              : "border-accent2/30 bg-accent2/10 text-accent2"
           }`}
         >
           {feedback.type === "good" ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : feedback.type === "bad" ? <ShieldAlert className="h-4 w-4 shrink-0" /> : <RefreshCw className="h-4 w-4 shrink-0 animate-spin" />}
@@ -130,10 +130,10 @@ export default function OptimizePanel() {
       )}
 
       {/* Banner 1-Click Optimize */}
-      <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-950/40 via-panel to-panel p-6 shadow-2xl backdrop-blur-md">
+      <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-accent/10 via-panel to-panel p-6 shadow-2xl backdrop-blur-xl">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-400">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-accent2/30 bg-accent2/10 px-3 py-1 text-xs font-semibold text-accent2">
               <Zap className="h-3.5 w-3.5" />
               <span>Tối Ưu Hệ Thống</span>
             </div>
@@ -147,7 +147,7 @@ export default function OptimizePanel() {
             <button
               onClick={handleOneClickOptimize}
               disabled={executing}
-              className="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-600/30 transition-all hover:scale-105 hover:from-blue-500 hover:to-indigo-500 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+              className="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent to-accent2 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-accent/30 transition-all hover:scale-105 hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
             >
               {executing ? (
                 <>
@@ -166,7 +166,7 @@ export default function OptimizePanel() {
               <button
                 onClick={handleRestore}
                 disabled={executing}
-                className="flex items-center gap-1.5 text-xs text-white/50 hover:text-rose-400 transition underline underline-offset-4"
+                className="flex items-center gap-1.5 text-xs text-white/50 hover:text-bad transition underline underline-offset-4"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 <span>Khôi phục cấu hình cũ ({new Date(status.backup.createdAt).toLocaleDateString("vi-VN")})</span>
@@ -208,7 +208,7 @@ export default function OptimizePanel() {
         {/* DNS Selection */}
         <div className="rounded-xl border border-hair bg-panel p-5 space-y-4">
           <div className="flex items-center gap-2">
-            <Server className="h-4 w-4 text-cyan-400" />
+            <Server className="h-4 w-4 text-accent2" />
             <div>
               <h4 className="text-sm font-medium text-white/90">1. Chọn máy chủ DNS mục tiêu</h4>
               <p className="text-xs text-white/50">Đổi DNS giúp tăng tốc độ tải trang web và vượt rào cản phân giải tên miền.</p>
@@ -222,13 +222,13 @@ export default function OptimizePanel() {
                 onClick={() => setDnsPreset(preset.id)}
                 className={`cursor-pointer rounded-xl border p-4 transition-all ${
                   dnsPreset === preset.id
-                    ? "border-indigo-500 bg-indigo-500/10 text-white"
+                    ? "border-accent bg-accent/10 text-white"
                     : "border-hair bg-white/[0.02] text-white/70 hover:border-white/20 hover:bg-white/5"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-sm">{preset.name}</span>
-                  <span className="text-xs font-mono text-indigo-400">{preset.servers}</span>
+                  <span className="text-xs font-mono text-accent2">{preset.servers}</span>
                 </div>
                 <p className="mt-1 text-xs text-white/50">{preset.desc}</p>
               </div>
@@ -243,13 +243,13 @@ export default function OptimizePanel() {
             onClick={() => setEnableTcp(!enableTcp)}
             className={`cursor-pointer rounded-xl border p-4 transition-all flex items-start justify-between ${
               enableTcp
-                ? "border-emerald-500/40 bg-emerald-500/5 text-white"
+                ? "border-good/40 bg-good/5 text-white"
                 : "border-hair bg-panel text-white/50 hover:border-white/20"
             }`}
           >
             <div className="space-y-1">
               <div className="flex items-center gap-2 font-semibold text-sm">
-                <SlidersHorizontal className="h-4 w-4 text-emerald-400" />
+                <SlidersHorizontal className="h-4 w-4 text-good" />
                 <span>2. Tinh chỉnh TCP Auto-Tuning (Normal)</span>
               </div>
               <p className="text-xs text-white/50">Tự động tối ưu kích thước Receive Window buffer cho mạng tốc độ cao.</p>
@@ -258,7 +258,7 @@ export default function OptimizePanel() {
               type="checkbox"
               checked={enableTcp}
               onChange={() => {}}
-              className="h-5 w-5 rounded border-hair bg-black/40 text-emerald-500 focus:ring-0"
+              className="h-5 w-5 rounded border-hair bg-black/40 text-good focus:ring-0"
             />
           </div>
 
@@ -267,13 +267,13 @@ export default function OptimizePanel() {
             onClick={() => setDisablePowerSave(!disablePowerSave)}
             className={`cursor-pointer rounded-xl border p-4 transition-all flex items-start justify-between ${
               disablePowerSave
-                ? "border-emerald-500/40 bg-emerald-500/5 text-white"
+                ? "border-good/40 bg-good/5 text-white"
                 : "border-hair bg-panel text-white/50 hover:border-white/20"
             }`}
           >
             <div className="space-y-1">
               <div className="flex items-center gap-2 font-semibold text-sm">
-                <Power className="h-4 w-4 text-emerald-400" />
+                <Power className="h-4 w-4 text-good" />
                 <span>3. Tắt tiết kiệm điện Card WiFi</span>
               </div>
               <p className="text-xs text-white/50">Ngăn không cho Windows tắt tạm thời Card WiFi để giữ Ping ổn định.</p>
@@ -282,7 +282,7 @@ export default function OptimizePanel() {
               type="checkbox"
               checked={disablePowerSave}
               onChange={() => {}}
-              className="h-5 w-5 rounded border-hair bg-black/40 text-emerald-500 focus:ring-0"
+              className="h-5 w-5 rounded border-hair bg-black/40 text-good focus:ring-0"
             />
           </div>
         </div>
@@ -291,7 +291,7 @@ export default function OptimizePanel() {
       {/* Note about Admin elevation */}
       <footer className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-xs text-white/40 space-y-1">
         <div className="flex items-center gap-1.5 font-semibold text-white/60">
-          <ShieldCheck className="h-4 w-4 text-indigo-400" />
+          <ShieldCheck className="h-4 w-4 text-accent" />
           <span>Lưu ý về quyền Administrator & Sao lưu:</span>
         </div>
         <p>- Các thao tác đổi DNS/TCP/Card mạng trên Windows cần quyền Quản trị viên (Admin).</p>

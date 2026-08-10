@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import SidebarNav, { type TabId } from "@/components/SidebarNav";
+import type { ComponentType } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import TopTabBar, { type TabId } from "@/components/TopTabBar";
 import SpeedTestPanel from "@/components/SpeedTestPanel";
 import NetworkInfoPanel from "@/components/NetworkInfoPanel";
 import WifiScanPanel from "@/components/WifiScanPanel";
@@ -11,24 +13,39 @@ import DnsPingPanel from "@/components/DnsPingPanel";
 import DnsBenchmarkPanel from "@/components/DnsBenchmarkPanel";
 import WifiHeatmapPanel from "@/components/WifiHeatmapPanel";
 
+const PANELS: Record<TabId, ComponentType> = {
+  speed: SpeedTestPanel,
+  system: NetworkInfoPanel,
+  wifi: WifiScanPanel,
+  optimize: OptimizePanel,
+  history: HistoryPanel,
+  dns_ping: DnsPingPanel,
+  dns_bench: DnsBenchmarkPanel,
+  heatmap: WifiHeatmapPanel,
+};
+
 export default function Dashboard() {
   const [tab, setTab] = useState<TabId>("speed");
+  const ActivePanel = PANELS[tab];
 
   return (
-    <div className="flex min-h-screen bg-ink text-white font-display overflow-x-hidden">
-      {/* Fixed Left Sidebar Navigation for Desktop Widescreen */}
-      <SidebarNav active={tab} onChange={setTab} />
+    <div className="min-h-screen bg-ink text-white font-display">
+      <TopTabBar active={tab} onChange={setTab} />
 
-      {/* Main Content Stage */}
-      <main className="flex-1 min-w-0 p-8 md:p-10 max-w-7xl overflow-y-auto">
-        {tab === "speed" && <SpeedTestPanel />}
-        {tab === "system" && <NetworkInfoPanel />}
-        {tab === "wifi" && <WifiScanPanel />}
-        {tab === "optimize" && <OptimizePanel />}
-        {tab === "history" && <HistoryPanel />}
-        {tab === "dns_ping" && <DnsPingPanel />}
-        {tab === "dns_bench" && <DnsBenchmarkPanel />}
-        {tab === "heatmap" && <WifiHeatmapPanel />}
+      <main className="mx-auto max-w-6xl px-6 py-8">
+        {/* Chuyển tab mượt bằng crossfade + trượt nhẹ (easing kiểu Apple) thay
+            vì đổi nội dung tức thời. */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <ActivePanel />
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   );

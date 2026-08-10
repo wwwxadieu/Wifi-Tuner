@@ -46,7 +46,7 @@ export default function WifiHeatmapPanel() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Radio className="h-6 w-6 text-indigo-400" />
+            <Radio className="h-6 w-6 text-accent" />
             <h2 className="text-xl font-bold text-white">Biểu đồ Tín hiệu & Trực quan hóa Kênh WiFi</h2>
           </div>
           <p className="text-sm text-white/50">
@@ -57,7 +57,7 @@ export default function WifiHeatmapPanel() {
         <button
           onClick={fetchScan}
           disabled={scanning}
-          className="flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent2 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${scanning ? "animate-spin" : ""}`} />
           <span>Quét lại tần số</span>
@@ -65,13 +65,13 @@ export default function WifiHeatmapPanel() {
       </div>
 
       {/* Suggested Channel Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-indigo-500/40 bg-gradient-to-r from-indigo-950/40 via-panel to-panel p-5 shadow-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-accent/40 bg-gradient-to-r from-accent/10 via-panel to-panel p-5 shadow-xl">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 font-bold text-xl font-mono">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/20 border border-accent/40 text-accent font-bold text-xl font-mono">
             #{bestChannel}
           </div>
           <div>
-            <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-accent text-xs font-bold uppercase tracking-wider">
               <Zap className="h-4 w-4" />
               <span>Kênh WiFi 2.4GHz Khuyên Dùng</span>
             </div>
@@ -100,11 +100,11 @@ export default function WifiHeatmapPanel() {
                     <div
                       className={`w-full rounded-lg transition-all duration-500 ${
                         isBest
-                          ? "bg-gradient-to-t from-emerald-600 to-teal-400 shadow-lg shadow-emerald-500/30"
+                          ? "bg-gradient-to-t from-good to-accent2 shadow-lg shadow-good/30"
                           : count > 2
-                          ? "bg-gradient-to-t from-rose-600 to-amber-500"
+                          ? "bg-gradient-to-t from-bad to-warn"
                           : count > 0
-                          ? "bg-gradient-to-t from-indigo-600 to-cyan-500"
+                          ? "bg-gradient-to-t from-accent to-accent2"
                           : "bg-white/5"
                       }`}
                       style={{ height: `${heightPct}%` }}
@@ -115,7 +115,7 @@ export default function WifiHeatmapPanel() {
                       </span>
                     )}
                   </div>
-                  <span className={`font-mono text-xs font-semibold ${isBest ? "text-emerald-400" : "text-white/60"}`}>
+                  <span className={`font-mono text-xs font-semibold ${isBest ? "text-good" : "text-white/60"}`}>
                     ch {ch}
                   </span>
                 </div>
@@ -135,7 +135,7 @@ export default function WifiHeatmapPanel() {
               className="flex items-center justify-between rounded-xl border border-hair bg-white/[0.02] p-3 hover:bg-white/5 transition"
             >
               <div className="flex items-center gap-3">
-                <Wifi className={`h-4 w-4 ${net.signalPercent > 70 ? "text-emerald-400" : net.signalPercent > 40 ? "text-cyan-400" : "text-amber-400"}`} />
+                <Wifi className={`h-4 w-4 ${net.signalPercent > 70 ? "text-good" : net.signalPercent > 40 ? "text-accent2" : "text-warn"}`} />
                 <div>
                   <h4 className="font-semibold text-white text-sm">{net.ssid || "WiFi Ẩn (Hidden)"}</h4>
                   <span className="text-xs text-white/40 font-mono">{net.bssid} • Kênh {net.channel} ({net.band})</span>
@@ -146,7 +146,7 @@ export default function WifiHeatmapPanel() {
                 <span className="text-xs font-mono font-semibold text-white/80">{net.signalPercent}%</span>
                 <div className="h-2 w-16 bg-black/40 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-accent2 to-accent rounded-full"
                     style={{ width: `${net.signalPercent}%` }}
                   />
                 </div>

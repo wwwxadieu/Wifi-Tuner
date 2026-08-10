@@ -93,7 +93,7 @@ function startServer() {
 }
 
 function loadingHtml() {
-  return `<!doctype html><html><body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0d12;color:#f2f5f8;font-family:Segoe UI,-apple-system,sans-serif;">
+  return `<!doctype html><html><body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#050507;color:#f5f5f7;font-family:Segoe UI,-apple-system,sans-serif;">
     <div style="text-align:center;">
       <div style="font-size:15px;font-weight:600;letter-spacing:.02em;">WiFi Tuner</div>
       <div style="margin-top:10px;font-size:13px;color:rgba(242,245,248,.5);">Đang khởi động…</div>
@@ -112,7 +112,7 @@ function errorHtml(message) {
         serverStderr.join("\n")
       )}</pre>`
     : "";
-  return `<!doctype html><html><body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0d12;color:#f2f5f8;font-family:Segoe UI,-apple-system,sans-serif;padding:40px;box-sizing:border-box;">
+  return `<!doctype html><html><body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#050507;color:#f5f5f7;font-family:Segoe UI,-apple-system,sans-serif;padding:40px;box-sizing:border-box;">
     <div style="max-width:620px;text-align:center;">
       <div style="font-size:17px;font-weight:600;">Không thể khởi động WiFi Tuner</div>
       <div style="margin-top:12px;font-size:13px;line-height:1.6;color:rgba(242,245,248,.6);">${safe}</div>
@@ -129,7 +129,7 @@ function createWindow() {
     height: 840,
     minWidth: 960,
     minHeight: 640,
-    backgroundColor: "#0a0d12",
+    backgroundColor: "#050507",
     title: "WiFi Tuner",
     autoHideMenuBar: true,
     webPreferences: {

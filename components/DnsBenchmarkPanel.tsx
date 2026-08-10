@@ -99,7 +99,7 @@ export default function DnsBenchmarkPanel() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="h-6 w-6 text-cyan-400" />
+            <SlidersHorizontal className="h-6 w-6 text-accent2" />
             <h2 className="text-xl font-bold text-white">Kiểm tra Tốc độ DNS (DNS Benchmark)</h2>
           </div>
           <p className="text-sm text-white/50">
@@ -110,7 +110,7 @@ export default function DnsBenchmarkPanel() {
         <button
           onClick={runBenchmark}
           disabled={running}
-          className="flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent2 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50"
         >
           {running ? (
             <>
@@ -127,7 +127,7 @@ export default function DnsBenchmarkPanel() {
       </div>
 
       {feedback && (
-        <div className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-300">
+        <div className="flex items-center gap-2 rounded-xl border border-accent2/30 bg-accent2/10 px-4 py-3 text-sm text-accent2">
           <ShieldCheck className="h-4 w-4 shrink-0" />
           <span>{feedback}</span>
         </div>
@@ -135,20 +135,20 @@ export default function DnsBenchmarkPanel() {
 
       {/* Recommended Fastest DNS Banner */}
       {fastest && (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/40 via-panel to-panel p-5 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-good/40 bg-gradient-to-r from-good/10 via-panel to-panel p-5 shadow-xl">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
-              <Trophy className="h-4 w-4 text-amber-400" />
+            <div className="flex items-center gap-2 text-good text-xs font-bold uppercase tracking-wider">
+              <Trophy className="h-4 w-4 text-warn" />
               <span>DNS Nhanh Nhất Được Khuyên Dùng</span>
             </div>
             <h3 className="text-xl font-bold text-white">{fastest.dns.name} ({fastest.dns.primary})</h3>
-            <p className="text-xs text-white/60">Độ trễ thấp kỷ lục: <b className="text-emerald-400">{fastest.latencyMs} ms</b></p>
+            <p className="text-xs text-white/60">Độ trễ thấp kỷ lục: <b className="text-good">{fastest.latencyMs} ms</b></p>
           </div>
 
           <button
             onClick={() => applyDns(fastest.dns)}
             disabled={applying}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-xs font-bold text-white shadow-lg hover:bg-emerald-500 transition active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-good px-5 py-3 text-xs font-bold text-white shadow-lg hover:brightness-110 transition active:scale-95 disabled:opacity-50"
           >
             <CheckCircle2 className="h-4 w-4" />
             <span>Áp dụng DNS Nhanh Nhất (1-Click)</span>
@@ -171,7 +171,7 @@ export default function DnsBenchmarkPanel() {
               >
                 <div className="flex items-center gap-3">
                   <span className={`flex h-7 w-7 items-center justify-center rounded-lg font-mono text-xs font-bold ${
-                    idx === 0 ? "bg-amber-500/20 text-amber-400 border border-amber-500/40" : "bg-white/5 text-white/60"
+                    idx === 0 ? "bg-warn/20 text-warn border border-warn/40" : "bg-white/5 text-white/60"
                   }`}>
                     #{idx + 1}
                   </span>
@@ -184,7 +184,7 @@ export default function DnsBenchmarkPanel() {
                 <div className="flex items-center gap-4">
                   {item.latencyMs !== null ? (
                     <span className={`font-mono font-bold text-sm ${
-                      item.status === "fast" ? "text-emerald-400" : item.status === "slow" ? "text-rose-400" : "text-cyan-300"
+                      item.status === "fast" ? "text-good" : item.status === "slow" ? "text-bad" : "text-accent2"
                     }`}>
                       {item.latencyMs} ms
                     </span>

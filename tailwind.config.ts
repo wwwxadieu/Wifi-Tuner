@@ -5,18 +5,27 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        display: ["-apple-system", "BlinkMacSystemFont", '"Segoe UI"', "Inter", "sans-serif"],
+        display: ["-apple-system", "BlinkMacSystemFont", '"SF Pro Display"', '"Segoe UI"', "Inter", "sans-serif"],
       },
       colors: {
-        ink: "#0a0d12",
-        surface: "#12161d",
-        panel: "rgba(255,255,255,0.05)",
-        hair: "rgba(255,255,255,0.08)",
-        accent: "#2fd0ff",
-        accent2: "#5a7dff",
-        good: "#34d399",
-        warn: "#fbbf24",
-        bad: "#f87171",
+        // Bảng màu theo hệ màu tối (Dark Mode) của Apple — dùng đúng giá trị hex
+        // hệ thống của iOS/macOS thay vì các màu Tailwind mặc định (indigo/cyan/
+        // emerald/rose) từng bị dùng lẫn lộn giữa các panel trước đây.
+        ink: "#050507",
+        surface: "#0d0d10",
+        panel: "rgba(255,255,255,0.055)",
+        panel2: "rgba(255,255,255,0.09)",
+        hair: "rgba(255,255,255,0.10)",
+        accent: "#0a84ff", // SF Blue (dark) — hành động chính, tab active, upload
+        accent2: "#64d2ff", // SF Teal (dark) — gradient phụ, điểm nhấn
+        good: "#30d158", // SF Green (dark) — thành công, đã tối ưu, download
+        warn: "#ff9f0a", // SF Orange (dark) — cảnh báo, chưa tối ưu
+        bad: "#ff453a", // SF Red (dark) — chỉ dùng cho lỗi
+        download: "#30d158",
+        upload: "#0a84ff",
+      },
+      backdropBlur: {
+        xs: "2px",
       },
       keyframes: {
         "fade-up": {

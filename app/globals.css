@@ -8,16 +8,34 @@ body {
 }
 
 body {
-  background: radial-gradient(circle at 20% -10%, rgba(47, 208, 255, 0.12), transparent 45%),
-    radial-gradient(circle at 90% 0%, rgba(90, 125, 255, 0.1), transparent 40%), #0a0d12;
-  color: #f2f5f8;
+  /* Nền tối trung tính kiểu macOS, điểm nhấn 2 quầng sáng xanh dương/teal rất
+     nhạt phía trên — gợi cảm giác "aurora" mềm mại thay vì nền phẳng 1 màu. */
+  background: radial-gradient(circle at 15% -15%, rgba(10, 132, 255, 0.16), transparent 45%),
+    radial-gradient(circle at 90% -10%, rgba(100, 210, 255, 0.12), transparent 40%), #050507;
+  color: #f5f5f7;
 }
 
 ::selection {
-  background: rgba(47, 208, 255, 0.35);
+  background: rgba(10, 132, 255, 0.35);
 }
 
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+/* Lớp kính mờ dùng chung cho thanh tab và các panel nổi bật — tách riêng
+   thành utility để không phải lặp lại backdrop-blur + viền + nền ở mọi nơi. */
+.glass {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

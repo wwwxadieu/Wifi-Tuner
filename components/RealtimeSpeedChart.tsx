@@ -65,14 +65,14 @@ export default function RealtimeSpeedChart({ samples, unit, status, phase, testT
           <span className="font-semibold text-white/90">Biểu đồ tốc độ thời gian thực (Gradient)</span>
           <div className="flex items-center gap-4 font-mono">
             {(testType === "all" || testType === "download") && (
-              <span className="flex items-center gap-1.5 font-bold text-emerald-400">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400" />
+              <span className="flex items-center gap-1.5 font-bold text-download">
+                <span className="h-2.5 w-2.5 rounded-full bg-download shadow-sm shadow-download" />
                 Download ({unit})
               </span>
             )}
             {(testType === "all" || testType === "upload") && (
-              <span className="flex items-center gap-1.5 font-bold text-rose-400">
-                <span className="h-2.5 w-2.5 rounded-full bg-rose-400 shadow-sm shadow-rose-400" />
+              <span className="flex items-center gap-1.5 font-bold text-upload">
+                <span className="h-2.5 w-2.5 rounded-full bg-upload shadow-sm shadow-upload" />
                 Upload ({unit})
               </span>
             )}
@@ -80,8 +80,8 @@ export default function RealtimeSpeedChart({ samples, unit, status, phase, testT
         </div>
 
         {status === "running" && (
-          <span className="rounded-full bg-indigo-500/20 border border-indigo-500/40 px-3 py-1 text-xs font-bold text-indigo-300 animate-pulse">
-            {phase === "ping" ? "Đang kiểm tra Ping..." : phase === "download" ? "🟩 Đang đo Download..." : phase === "upload" ? "🟥 Đang đo Upload..." : "Đang xử lý..."}
+          <span className="rounded-full bg-accent/20 border border-accent/40 px-3 py-1 text-xs font-bold text-accent animate-pulse">
+            {phase === "ping" ? "Đang kiểm tra Ping..." : phase === "download" ? "🟩 Đang đo Download..." : phase === "upload" ? "🔵 Đang đo Upload..." : "Đang xử lý..."}
           </span>
         )}
       </div>
@@ -89,16 +89,16 @@ export default function RealtimeSpeedChart({ samples, unit, status, phase, testT
       <div className="relative h-36 w-full">
         <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="h-full w-full overflow-visible">
           <defs>
-            {/* Emerald Green Gradient for Download */}
+            {/* SF Green — Download */}
             <linearGradient id="dlGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="#30d158" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#30d158" stopOpacity="0.0" />
             </linearGradient>
 
-            {/* Crimson Red Gradient for Upload */}
+            {/* SF Blue — Upload */}
             <linearGradient id="ulGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#f43f5e" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="#0a84ff" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#0a84ff" stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
@@ -115,11 +115,11 @@ export default function RealtimeSpeedChart({ samples, unit, status, phase, testT
             <path
               d={dlPath}
               fill="none"
-              stroke="#10b981"
+              stroke="#30d158"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+              className="transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(48,209,88,0.5)]"
             />
           )}
 
@@ -131,11 +131,11 @@ export default function RealtimeSpeedChart({ samples, unit, status, phase, testT
             <path
               d={ulPath}
               fill="none"
-              stroke="#f43f5e"
+              stroke="#0a84ff"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]"
+              className="transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(10,132,255,0.5)]"
             />
           )}
         </svg>

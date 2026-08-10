@@ -70,15 +70,15 @@ export default function DnsPingPanel() {
   const getGradeBadge = (grade: "S" | "A" | "B" | "C" | "D") => {
     switch (grade) {
       case "S":
-        return <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-3 py-1 text-xs font-bold text-emerald-400">Hạng S • Hoàn Hảo</span>;
+        return <span className="rounded-full bg-good/20 border border-good/40 px-3 py-1 text-xs font-bold text-good">Hạng S • Hoàn Hảo</span>;
       case "A":
-        return <span className="rounded-full bg-cyan-500/20 border border-cyan-500/40 px-3 py-1 text-xs font-bold text-cyan-400">Hạng A • Mượt Mà</span>;
+        return <span className="rounded-full bg-accent2/20 border border-accent2/40 px-3 py-1 text-xs font-bold text-accent2">Hạng A • Mượt Mà</span>;
       case "B":
-        return <span className="rounded-full bg-indigo-500/20 border border-indigo-500/40 px-3 py-1 text-xs font-bold text-indigo-300">Hạng B • Khá Tốt</span>;
+        return <span className="rounded-full bg-accent/20 border border-accent/40 px-3 py-1 text-xs font-bold text-accent">Hạng B • Khá Tốt</span>;
       case "C":
-        return <span className="rounded-full bg-amber-500/20 border border-amber-500/40 px-3 py-1 text-xs font-bold text-amber-400">Hạng C • Hơi Giật</span>;
+        return <span className="rounded-full bg-warn/20 border border-warn/40 px-3 py-1 text-xs font-bold text-warn">Hạng C • Hơi Giật</span>;
       case "D":
-        return <span className="rounded-full bg-rose-500/20 border border-rose-500/40 px-3 py-1 text-xs font-bold text-rose-400">Hạng D • Lag / Rớt Gói</span>;
+        return <span className="rounded-full bg-bad/20 border border-bad/40 px-3 py-1 text-xs font-bold text-bad">Hạng D • Lag / Rớt Gói</span>;
     }
   };
 
@@ -87,7 +87,7 @@ export default function DnsPingPanel() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Signal className="h-6 w-6 text-indigo-400" />
+            <Signal className="h-6 w-6 text-accent" />
             <h2 className="text-xl font-bold text-white">So sánh độ ổn định Ping tới DNS</h2>
           </div>
           <p className="text-sm text-white/50">
@@ -99,7 +99,7 @@ export default function DnsPingPanel() {
         <button
           onClick={runTest}
           disabled={testing}
-          className="flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent2 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50"
         >
           {testing ? (
             <>
@@ -129,7 +129,7 @@ export default function DnsPingPanel() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 border border-accent/20 text-accent">
                     <Signal className="h-5 w-5" />
                   </div>
                   <div>
@@ -140,7 +140,7 @@ export default function DnsPingPanel() {
 
                 <div>
                   {isLoading && <span className="text-xs text-white/40 animate-pulse">Đang đo ping…</span>}
-                  {isError && <span className="text-xs text-rose-400">Lỗi kết nối máy chủ</span>}
+                  {isError && <span className="text-xs text-bad">Lỗi kết nối máy chủ</span>}
                   {data && getGradeBadge(data.grade)}
                 </div>
               </div>

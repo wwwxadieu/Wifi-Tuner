@@ -88,30 +88,30 @@ export default function UpdateNotifier() {
     <div className="flex items-center gap-3">
       {/* Current Version Badge */}
       <div className="flex items-center gap-2 rounded-full border border-hair bg-white/5 px-3 py-1 text-xs text-white/70">
-        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="h-2 w-2 rounded-full bg-good animate-pulse" />
         <span>v{currentVersion}</span>
       </div>
 
       {/* Status Notifications */}
       {updateState.status === "checking" && (
         <span className="flex items-center gap-1.5 text-xs text-white/50 animate-pulse">
-          <RefreshCw className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+          <RefreshCw className="h-3.5 w-3.5 animate-spin text-accent2" />
           <span>Đang kiểm tra bản cập nhật…</span>
         </span>
       )}
 
       {updateState.status === "not-available" && (
-        <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
+        <span className="flex items-center gap-1 text-xs text-good font-medium">
           <CheckCircle2 className="h-3.5 w-3.5" />
           <span>Đã ở phiên bản mới nhất</span>
         </span>
       )}
 
       {updateState.status === "available" && (
-        <div className="flex items-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-3 py-1.5 text-xs text-white">
+        <div className="flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs text-white">
           <span>Có bản mới <b>v{updateState.version}</b></span>
           <span className={`flex items-center gap-1 rounded-md px-2 py-0.5 font-semibold text-[10px] ${
-            updateState.isDifferential ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+            updateState.isDifferential ? "bg-good/20 text-good border border-good/30" : "bg-warn/20 text-warn border border-warn/30"
           }`}>
             {updateState.isDifferential ? <Zap className="h-3 w-3" /> : <PackageCheck className="h-3 w-3" />}
             {updateState.isDifferential ? "Bản vá nhanh" : "Bản cập nhật lớn"}
@@ -120,14 +120,14 @@ export default function UpdateNotifier() {
       )}
 
       {updateState.status === "downloading" && (
-        <div className="flex items-center gap-3 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-300">
+        <div className="flex items-center gap-3 rounded-xl border border-accent2/30 bg-accent2/10 px-3 py-1 text-xs text-accent2">
           <span>Đang tải {updateState.percent}%</span>
           {updateState.bytesPerSecond && (
             <span className="text-white/50 text-[10px]">({Math.round(updateState.bytesPerSecond / 1024)} KB/s)</span>
           )}
           <div className="h-1.5 w-16 bg-black/40 rounded-full overflow-hidden">
             <div
-              className="h-full bg-cyan-400 rounded-full transition-all duration-300"
+              className="h-full bg-accent2 rounded-full transition-all duration-300"
               style={{ width: `${updateState.percent || 0}%` }}
             />
           </div>
@@ -137,7 +137,7 @@ export default function UpdateNotifier() {
       {updateState.status === "downloaded" && (
         <button
           onClick={handleInstall}
-          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-semibold text-white shadow-lg transition hover:scale-105 active:scale-95"
+          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-good to-accent2 px-3 py-1.5 text-xs font-semibold text-white shadow-lg transition hover:scale-105 active:scale-95"
         >
           <Sparkles className="h-3.5 w-3.5" />
           <span>Cài đặt & Khởi động lại</span>
@@ -150,7 +150,7 @@ export default function UpdateNotifier() {
           onClick={handleCheck}
           className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white/90 transition underline underline-offset-4"
         >
-          {updateState.status === "error" && <AlertCircle className="h-3.5 w-3.5 text-rose-400" />}
+          {updateState.status === "error" && <AlertCircle className="h-3.5 w-3.5 text-bad" />}
           <span>Kiểm tra bản cập nhật</span>
         </button>
       )}

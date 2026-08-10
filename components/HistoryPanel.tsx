@@ -90,33 +90,33 @@ export default function HistoryPanel() {
   return (
     <div className="space-y-8 animate-fade-up">
       {msg && (
-        <div className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-300">
+        <div className="flex items-center gap-2 rounded-xl border border-accent2/30 bg-accent2/10 px-4 py-3 text-sm text-accent2">
           <Info className="h-4 w-4 shrink-0" />
           <span>{msg}</span>
         </div>
       )}
 
       {/* Driver Health Card */}
-      <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-panel via-panel to-slate-900/60 p-6 shadow-xl space-y-4">
+      <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-panel via-panel to-surface p-6 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <Cpu className="h-5 w-5 text-indigo-400" />
+              <Cpu className="h-5 w-5 text-accent" />
               <h2 className="text-xl font-bold text-white">Chẩn đoán Driver Card WiFi</h2>
               {driver?.status === "outdated" && (
-                <span className="flex items-center gap-1 rounded-full border border-rose-500/40 bg-rose-500/20 px-3 py-0.5 text-xs font-semibold text-rose-400">
+                <span className="flex items-center gap-1 rounded-full border border-bad/40 bg-bad/20 px-3 py-0.5 text-xs font-semibold text-bad">
                   <ShieldAlert className="h-3.5 w-3.5" />
                   <span>Driver quá cũ</span>
                 </span>
               )}
               {driver?.status === "up_to_date" && (
-                <span className="flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-3 py-0.5 text-xs font-semibold text-emerald-400">
+                <span className="flex items-center gap-1 rounded-full border border-good/40 bg-good/20 px-3 py-0.5 text-xs font-semibold text-good">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   <span>Driver mới</span>
                 </span>
               )}
               {driver?.status === "moderate" && (
-                <span className="flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/20 px-3 py-0.5 text-xs font-semibold text-amber-400">
+                <span className="flex items-center gap-1 rounded-full border border-warn/40 bg-warn/20 px-3 py-0.5 text-xs font-semibold text-warn">
                   <Info className="h-3.5 w-3.5" />
                   <span>Ổn định</span>
                 </span>
@@ -148,7 +148,7 @@ export default function HistoryPanel() {
         </div>
 
         <div className="rounded-xl border border-hair bg-black/20 p-4 text-xs text-white/70 flex items-start gap-2">
-          <Info className="h-4 w-4 shrink-0 text-cyan-400 mt-0.5" />
+          <Info className="h-4 w-4 shrink-0 text-accent2 mt-0.5" />
           <div>
             <span className="font-semibold text-white/90">Khuyến nghị:</span> {driver?.recommendation}
           </div>
@@ -159,7 +159,7 @@ export default function HistoryPanel() {
       <section className="rounded-2xl border border-hair bg-panel p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Clock className="h-5 w-5 text-cyan-400" />
+            <Clock className="h-5 w-5 text-accent2" />
             <div>
               <h3 className="text-lg font-semibold text-white">Lên lịch đo tốc độ tự động</h3>
               <p className="text-xs text-white/50">Tự động thực hiện đo tốc độ định kỳ để theo dõi biến động đường truyền.</p>
@@ -179,7 +179,7 @@ export default function HistoryPanel() {
                 onClick={() => handleScheduleChange(opt.id)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
                   schedule === opt.id
-                    ? "bg-indigo-600 text-white shadow-md"
+                    ? "bg-accent text-white shadow-md"
                     : "text-white/60 hover:text-white hover:bg-white/5"
                 }`}
               >
@@ -198,7 +198,7 @@ export default function HistoryPanel() {
             <button
               onClick={handleClearHistory}
               disabled={clearing}
-              className="flex items-center gap-1 text-xs text-rose-400 hover:underline"
+              className="flex items-center gap-1 text-xs text-bad hover:underline"
             >
               <Trash2 className="h-3.5 w-3.5" />
               <span>Xóa lịch sử đo</span>
@@ -208,8 +208,8 @@ export default function HistoryPanel() {
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <StatCard label="Tổng số lần đo" value={stats?.totalTests ? String(stats.totalTests) : "0"} />
-          <StatCard label="Download trung bình" value={stats?.avgDownload ? `${stats.avgDownload} Mbps` : "—"} highlight="accent" />
-          <StatCard label="Upload trung bình" value={stats?.avgUpload ? `${stats.avgUpload} Mbps` : "—"} highlight="accent2" />
+          <StatCard label="Download trung bình" value={stats?.avgDownload ? `${stats.avgDownload} Mbps` : "—"} highlight="download" />
+          <StatCard label="Upload trung bình" value={stats?.avgUpload ? `${stats.avgUpload} Mbps` : "—"} highlight="upload" />
           <StatCard label="Ping tốt nhất" value={stats?.bestLatency ? `${stats.bestLatency} ms` : "—"} />
         </div>
       </section>
@@ -217,7 +217,7 @@ export default function HistoryPanel() {
       {/* History Timeline */}
       <section className="rounded-2xl border border-hair bg-panel p-6 space-y-4">
         <div className="flex items-center gap-2">
-          <History className="h-5 w-5 text-indigo-400" />
+          <History className="h-5 w-5 text-accent" />
           <h3 className="text-lg font-semibold text-white">Dòng thời gian kết quả đo (SQLite)</h3>
         </div>
 
@@ -249,11 +249,11 @@ export default function HistoryPanel() {
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm font-semibold">
-                    <div className="flex items-center gap-1 text-cyan-400">
+                    <div className="flex items-center gap-1 text-download">
                       <ArrowDown className="h-3.5 w-3.5" />
                       <span>{record.downloadMbps !== null ? `${record.downloadMbps} Mbps` : "—"}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-indigo-400">
+                    <div className="flex items-center gap-1 text-upload">
                       <ArrowUp className="h-3.5 w-3.5" />
                       <span>{record.uploadMbps !== null ? `${record.uploadMbps} Mbps` : "—"}</span>
                     </div>
@@ -263,7 +263,7 @@ export default function HistoryPanel() {
 
                   <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full transition-all duration-500"
+                      className="h-full bg-gradient-to-r from-download to-accent2 rounded-full transition-all duration-500"
                       style={{ width: `${dlPercent}%` }}
                     />
                   </div>
