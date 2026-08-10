@@ -86,3 +86,34 @@ export interface OptimizationStatusResult {
   backup: BackupConfig | null;
 }
 
+export type SpeedUnit = "Mbps" | "MB/s" | "Kbps";
+
+export type SpeedServerRegion = "auto" | "vn" | "sg" | "hk" | "jp" | "us";
+
+export interface SpeedServerInfo {
+  id: SpeedServerRegion;
+  name: string;
+  flag: string;
+  endpoint: string;
+}
+
+export function convertSpeed(bps: number | undefined | null, unit: SpeedUnit): number | null {
+  if (bps === undefined || bps === null) return null;
+  switch (unit) {
+    case "MB/s":
+      return Math.round((bps / 8_000_000) * 100) / 100;
+    case "Kbps":
+      return Math.round(bps / 1_000);
+    case "Mbps":
+    default:
+      return Math.round((bps / 1_000_000) * 10) / 10;
+  }
+}
+
+export function formatSpeed(bps: number | undefined | null, unit: SpeedUnit): string {
+  const converted = convertSpeed(bps, unit);
+  if (converted === null) return "—";
+  return `${converted} ${unit}`;
+}
+
+
