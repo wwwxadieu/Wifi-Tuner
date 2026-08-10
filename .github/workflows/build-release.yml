@@ -9,6 +9,12 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    # Cần "contents: write" để softprops/action-gh-release tạo/cập nhật release
+    # và tải asset lên — không có block này, token mặc định chỉ có quyền đọc và
+    # bước upload sẽ thất bại (đã xảy ra ở lần release trước, exe build thành
+    # công nhưng bước upload lỗi ngay lập tức do bị từ chối quyền).
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Repository
