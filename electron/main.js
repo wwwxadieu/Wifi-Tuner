@@ -146,6 +146,12 @@ function createWindow() {
   });
 }
 
+function broadcastUpdateStatus(data) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("update-status", data);
+  }
+}
+
 function setupAutoUpdater() {
   if (!app.isPackaged) {
     log("[updater] skipped (not packaged)");
@@ -155,19 +161,54 @@ function setupAutoUpdater() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
-  autoUpdater.on("checking-for-update", () => log("[updater] checking for update"));
-  autoUpdater.on("update-available", (info) => log("[updater] update available:", info.version));
-  autoUpdater.on("update-not-available", () => log("[updater] already up to date"));
-  autoUpdater.on("error", (err) => log("[updater] error:", err.message));
-  autoUpdater.on("download-progress", (p) => log(`[updater] downloading ${Math.round(p.percent)}%`));
+  autoUpdater.on("checking-for-update", () => {
+    log("[updater] checking for update");
+    broadcastUpdateStatus({ status: "checking" });
+  });
+
+  autoUpdater.on("update-available", (info) => {
+    log("[updater] update available:", info.version);
+    // Differential updates are detected if files include blockmap or smaller size
+    const isDifferential = Array.isArray(info.files) && info.files.some((f) => f.url && f.url.endsWith(".blockmap"));
+    broadcastUpdateStatus({
+      status: "available",
+      version: info.version,
+      releaseNotes: typeof info.releaseNotes === "string" ? info.releaseNotes : "",
+      isDifferential,
+      files: info.files,
+    });
+  });
+
+  autoUpdater.on("update-not-available", (info) => {
+    log("[updater] already up to date");
+    broadcastUpdateStatus({ status: "not-available", version: info?.version });
+  });
+
+  autoUpdater.on("error", (err) => {
+    log("[updater] error:", err.message);
+    broadcastUpdateStatus({ status: "error", error: err.message });
+  });
+
+  autoUpdater.on("download-progress", (p) => {
+    log(`[updater] downloading ${Math.round(p.percent)}% (${Math.round(p.bytesPerSecond / 1024)} KB/s)`);
+    broadcastUpdateStatus({
+      status: "downloading",
+      percent: Math.round(p.percent),
+      transferred: p.transferred,
+      total: p.total,
+      bytesPerSecond: p.bytesPerSecond,
+    });
+  });
 
   autoUpdater.on("update-downloaded", async (info) => {
     log("[updater] update downloaded:", info.version);
+    broadcastUpdateStatus({ status: "downloaded", version: info.version });
+
     const { response } = await dialog.showMessageBox(mainWindow ?? undefined, {
       type: "info",
       title: "Có bản cập nhật mới",
-      message: `WiFi Tuner ${info.version} đã sẵn sàng. Khởi động lại để cài đặt?`,
-      buttons: ["Cài đặt ngay", "Để sau"],
+      message: `WiFi Tuner ${info.version} đã hoàn tất tải xuống. Khởi động lại ứng dụng để cập nhật?`,
+      buttons: ["Cài đặt & Khởi động lại", "Để sau"],
       defaultId: 0,
       cancelId: 1,
     });
@@ -178,6 +219,32 @@ function setupAutoUpdater() {
   setTimeout(check, 5000);
   setInterval(check, UPDATE_CHECK_INTERVAL_MS);
 }
+
+ipcMain.handle("check-for-updates", async () => {
+  if (!app.isPackaged) return { status: "not-packaged" };
+  try {
+    const res = await autoUpdater.checkForUpdates();
+    return { status: "success", version: res?.updateInfo?.version };
+  } catch (err) {
+    return { status: "error", error: err.message };
+  }
+});
+
+ipcMain.handle("download-update", async () => {
+  if (!app.isPackaged) return false;
+  try {
+    await autoUpdater.downloadUpdate();
+    return true;
+  } catch {
+    return false;
+  }
+});
+
+ipcMain.handle("quit-and-install", () => {
+  if (app.isPackaged) {
+    autoUpdater.quitAndInstall();
+  }
+});
 
 ipcMain.handle("open-external", (_event, url) => {
   try {

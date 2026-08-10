@@ -7,6 +7,7 @@ import NetworkInfoPanel from "@/components/NetworkInfoPanel";
 import WifiScanPanel from "@/components/WifiScanPanel";
 import OptimizePanel from "@/components/OptimizePanel";
 import HistoryPanel from "@/components/HistoryPanel";
+import UpdateNotifier from "@/components/UpdateNotifier";
 
 export default function Dashboard() {
   const [tab, setTab] = useState<TabId>("speed");
@@ -14,8 +15,11 @@ export default function Dashboard() {
   return (
     <main className="mx-auto min-h-screen max-w-5xl px-6 py-10">
       <header className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">WiFi Tuner</h1>
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight">WiFi Tuner</h1>
+            <UpdateNotifier />
+          </div>
           <p className="text-sm text-white/50">Chẩn đoán và tối ưu tốc độ WiFi cho Windows</p>
         </div>
         <TabNav active={tab} onChange={setTab} />
