@@ -1,6 +1,6 @@
 {
   "name": "wifi-tuner",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Ứng dụng desktop Windows tối ưu tốc độ WiFi: speed test, chẩn đoán mạng, tinh chỉnh hệ thống, quét kênh WiFi lân cận, kiểm tra driver.",
   "author": "WiFi Tuner",
