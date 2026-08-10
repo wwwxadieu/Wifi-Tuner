@@ -29,17 +29,20 @@ const TABS: TabItem[] = [
 export default function TopTabBar({ active, onChange }: { active: TabId; onChange: (id: TabId) => void }) {
   return (
     <header className="sticky top-0 z-20 border-b border-white/10 bg-white/[0.06] backdrop-blur-2xl backdrop-saturate-150">
-      <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3">
+      <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex shrink-0 items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-accent to-accent2 text-white shadow-lg shadow-accent/30">
-            <ShieldCheck className="h-4 w-4" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-accent to-accent2 text-white shadow-lg shadow-accent/30">
+            <ShieldCheck className="h-5 w-5" />
           </div>
-          <span className="hidden text-sm font-semibold tracking-tight text-white sm:inline">WiFi Tuner</span>
+          <span className="hidden text-base font-semibold tracking-tight text-white sm:inline">WiFi Tuner</span>
         </div>
 
-        <div className="h-5 w-px shrink-0 bg-white/10" />
+        <div className="h-7 w-px shrink-0 bg-white/10" />
 
-        <nav className="no-scrollbar flex items-center gap-1 overflow-x-auto">
+        {/* Khu vực dùng nhiều nhất trong app — tab to, dễ bấm. Khi cửa sổ hẹp
+            (gần mức tối thiểu 960px) và không đủ chỗ, thanh này cuộn ngang
+            thay vì thu nhỏ tab, giữ kích thước dễ bấm ổn định. */}
+        <nav className="no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = active === tab.id;
@@ -47,7 +50,7 @@ export default function TopTabBar({ active, onChange }: { active: TabId; onChang
               <button
                 key={tab.id}
                 onClick={() => onChange(tab.id)}
-                className={`relative flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                className={`relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold transition-colors ${
                   isActive ? "text-white" : "text-white/50 hover:text-white/80"
                 }`}
               >
@@ -58,7 +61,7 @@ export default function TopTabBar({ active, onChange }: { active: TabId; onChang
                     transition={{ type: "spring", stiffness: 500, damping: 35 }}
                   />
                 )}
-                <Icon className="relative h-3.5 w-3.5 shrink-0" />
+                <Icon className="relative h-5 w-5 shrink-0" />
                 <span className="relative">{tab.label}</span>
               </button>
             );

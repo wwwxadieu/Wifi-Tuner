@@ -18,7 +18,7 @@ const HIGHLIGHT_CLASS: Record<NonNullable<StatCardProps["highlight"]>, string> =
 
 export default function StatCard({ label, value, sub, highlight, loading }: StatCardProps) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-xl transition-colors hover:bg-white/[0.07]">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.07]">
       <div className="text-xs uppercase tracking-wide text-white/40">{label}</div>
       <div
         className={`mt-2 text-2xl font-semibold ${highlight ? HIGHLIGHT_CLASS[highlight] : "text-white"} ${

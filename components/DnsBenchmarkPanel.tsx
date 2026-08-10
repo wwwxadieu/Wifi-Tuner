@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { SlidersHorizontal, Zap, CheckCircle2, RefreshCw, Trophy, Server, ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
+import { SlidersHorizontal, Zap, CheckCircle2, RefreshCw, Trophy, ShieldCheck } from "lucide-react";
 import { KNOWN_DNS_PROVIDERS } from "@/lib/types";
 import type { KnownDnsProvider, OptimizationSettings } from "@/lib/types";
 
@@ -165,8 +166,11 @@ export default function DnsBenchmarkPanel() {
         ) : (
           <div className="space-y-2">
             {results.map((item, idx) => (
-              <div
+              <motion.div
                 key={item.dns.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.04, ease: [0.16, 1, 0.3, 1] }}
                 className="flex items-center justify-between rounded-xl border border-hair bg-white/[0.02] p-3.5 hover:bg-white/5 transition"
               >
                 <div className="flex items-center gap-3">
@@ -200,7 +204,7 @@ export default function DnsBenchmarkPanel() {
                     Đổi DNS
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         )}

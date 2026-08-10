@@ -32,7 +32,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-ink text-white font-display">
       <TopTabBar active={tab} onChange={setTab} />
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         {/* Chuyển tab mượt bằng crossfade + trượt nhẹ (easing kiểu Apple) thay
             vì đổi nội dung tức thời. */}
         <AnimatePresence mode="wait">

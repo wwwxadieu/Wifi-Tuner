@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Radio, Signal, Wifi, RefreshCw, AlertCircle, CheckCircle2, Info, Zap } from "lucide-react";
+import { motion } from "framer-motion";
+import { Radio, Wifi, RefreshCw, Zap } from "lucide-react";
 import type { WifiScanResult } from "@/lib/types";
 
 export default function WifiHeatmapPanel() {
@@ -88,14 +89,20 @@ export default function WifiHeatmapPanel() {
         {loading ? (
           <div className="text-sm text-white/40 animate-pulse">Đang quét phổ tần WiFi…</div>
         ) : (
-          <div className="grid grid-cols-13 gap-1.5 pt-4">
-            {channels24.map((ch) => {
+          <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-1.5 pt-4">
+            {channels24.map((ch, idx) => {
               const count = channelCounts[ch] || 0;
               const isBest = ch === bestChannel;
               const heightPct = Math.min(100, Math.max(15, count * 30));
 
               return (
-                <div key={ch} className="flex flex-col items-center gap-2">
+                <motion.div
+                  key={ch}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: idx * 0.03, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex flex-col items-center gap-2"
+                >
                   <div className="relative flex h-32 w-full items-end justify-center rounded-xl bg-black/40 p-1">
                     <div
                       className={`w-full rounded-lg transition-all duration-500 ${
@@ -118,7 +125,7 @@ export default function WifiHeatmapPanel() {
                   <span className={`font-mono text-xs font-semibold ${isBest ? "text-good" : "text-white/60"}`}>
                     ch {ch}
                   </span>
-                </div>
+                </motion.div>
               );
             })}
           </div>
@@ -130,8 +137,11 @@ export default function WifiHeatmapPanel() {
         <h3 className="text-base font-semibold text-white">Danh sách các WiFi lân cận ({networks.length} mạng)</h3>
         <div className="space-y-2">
           {networks.map((net, idx) => (
-            <div
+            <motion.div
               key={net.bssid || idx}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: Math.min(idx, 12) * 0.03, ease: [0.16, 1, 0.3, 1] }}
               className="flex items-center justify-between rounded-xl border border-hair bg-white/[0.02] p-3 hover:bg-white/5 transition"
             >
               <div className="flex items-center gap-3">
@@ -151,7 +161,7 @@ export default function WifiHeatmapPanel() {
                   />
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Activity, RefreshCw, Signal } from "lucide-react";
 import StatCard from "./StatCard";
 import { KNOWN_DNS_PROVIDERS } from "@/lib/types";
@@ -116,15 +117,18 @@ export default function DnsPingPanel() {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {KNOWN_DNS_PROVIDERS.map((dns) => {
+        {KNOWN_DNS_PROVIDERS.map((dns, idx) => {
           const res = results[dns.id];
           const isLoading = res === "loading";
           const isError = res === "error";
           const data = typeof res === "object" ? res : null;
 
           return (
-            <div
+            <motion.div
               key={dns.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: idx * 0.05, ease: [0.16, 1, 0.3, 1] }}
               className="rounded-2xl border border-hair bg-panel p-5 space-y-3 hover:border-white/20 transition"
             >
               <div className="flex items-center justify-between">
@@ -153,7 +157,7 @@ export default function DnsPingPanel() {
                   <StatCard label="Rớt gói (Packet Loss)" value={`${data.lossPercent}%`} highlight={data.lossPercent === 0 ? "good" : "bad"} />
                 </div>
               )}
-            </div>
+            </motion.div>
           );
         })}
       </div>

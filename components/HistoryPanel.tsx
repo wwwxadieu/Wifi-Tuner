@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ShieldAlert, CheckCircle2, Info, ExternalLink, Trash2, Calendar, Clock, ArrowDown, ArrowUp, Activity, Cpu, History, Settings } from "lucide-react";
+import { motion } from "framer-motion";
+import { ShieldAlert, CheckCircle2, Info, ExternalLink, Trash2, Calendar, Clock, ArrowDown, ArrowUp, Cpu, History } from "lucide-react";
 import type { SpeedHistoryRecord, SpeedStats } from "@/lib/db";
 import type { DriverAnalysisResult } from "@/lib/driverCheck";
 import StatCard from "./StatCard";
@@ -225,11 +226,14 @@ export default function HistoryPanel() {
           <p className="text-sm text-white/40 py-4 text-center">Chưa có dữ liệu lịch sử đo tốc độ. Hãy thử đo ở tab "Tốc độ".</p>
         ) : (
           <div className="space-y-3">
-            {history.map((record) => {
+            {history.map((record, idx) => {
               const dlPercent = record.downloadMbps ? Math.min(100, Math.round((record.downloadMbps / maxDownload) * 100)) : 0;
               return (
-                <div
+                <motion.div
                   key={record.id || record.createdAt}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: Math.min(idx, 12) * 0.03, ease: [0.16, 1, 0.3, 1] }}
                   className="rounded-xl border border-hair bg-white/[0.02] p-4 space-y-2 hover:bg-white/5 transition"
                 >
                   <div className="flex items-center justify-between text-xs text-white/60">
@@ -267,7 +271,7 @@ export default function HistoryPanel() {
                       style={{ width: `${dlPercent}%` }}
                     />
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
