@@ -60,3 +60,29 @@ export interface PingResult {
   jitterMs: number | null;
   lossPercent: number;
 }
+
+export type DnsPresetKey = "cloudflare" | "google" | "quad9" | "dhcp" | "custom";
+
+export interface BackupConfig {
+  createdAt: string;
+  dns: string[];
+  tcpAutoTuning: string;
+  powerAllowTurnOff: string | null;
+}
+
+export interface OptimizationSettings {
+  dnsPreset: DnsPresetKey;
+  customDns?: string[];
+  enableTcpTuning: boolean;
+  disablePowerSave: boolean;
+}
+
+export interface OptimizationStatusResult {
+  platform: DataSource;
+  isOptimized: boolean;
+  dnsStatus: "optimized" | "suboptimal" | "unknown";
+  tcpStatus: "optimized" | "suboptimal" | "unknown";
+  powerStatus: "optimized" | "suboptimal" | "unknown";
+  backup: BackupConfig | null;
+}
+

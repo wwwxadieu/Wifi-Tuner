@@ -5,6 +5,8 @@ import TabNav, { type TabId } from "@/components/TabNav";
 import SpeedTestPanel from "@/components/SpeedTestPanel";
 import NetworkInfoPanel from "@/components/NetworkInfoPanel";
 import WifiScanPanel from "@/components/WifiScanPanel";
+import OptimizePanel from "@/components/OptimizePanel";
+import HistoryPanel from "@/components/HistoryPanel";
 
 export default function Dashboard() {
   const [tab, setTab] = useState<TabId>("speed");
@@ -23,6 +25,8 @@ export default function Dashboard() {
         {tab === "speed" && <SpeedTestPanel />}
         {tab === "system" && <NetworkInfoPanel />}
         {tab === "wifi" && <WifiScanPanel />}
+        {tab === "optimize" && <OptimizePanel />}
+        {tab === "history" && <HistoryPanel />}
       </section>
     </main>
   );

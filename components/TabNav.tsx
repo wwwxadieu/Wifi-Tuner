@@ -1,11 +1,13 @@
 "use client";
 
-export type TabId = "speed" | "system" | "wifi";
+export type TabId = "speed" | "system" | "wifi" | "optimize" | "history";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "speed", label: "Tốc độ" },
   { id: "system", label: "Hệ thống" },
   { id: "wifi", label: "WiFi lân cận" },
+  { id: "optimize", label: "⚡ Tối ưu 1-chạm" },
+  { id: "history", label: "📊 Lịch sử & Driver" },
 ];
 
 export default function TabNav({ active, onChange }: { active: TabId; onChange: (id: TabId) => void }) {

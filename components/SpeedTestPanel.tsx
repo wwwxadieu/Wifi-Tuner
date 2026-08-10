@@ -77,6 +77,19 @@ export default function SpeedTestPanel() {
         saveHistory(next);
         return next;
       });
+
+      // Synchronize with SQLite Database
+      fetch("/api/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          downloadMbps: entry.download,
+          uploadMbps: entry.upload,
+          latencyMs: entry.latency,
+          jitterMs: entry.jitter,
+          source: "manual",
+        }),
+      }).catch(() => {});
     };
     engine.onError = (message) => {
       setError(message);
