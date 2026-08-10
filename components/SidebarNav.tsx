@@ -1,9 +1,9 @@
 "use client";
 
-import { Gauge, Cpu, Wifi, Zap, History, Gamepad2, SlidersHorizontal, Radio, ShieldCheck } from "lucide-react";
+import { Gauge, Cpu, Wifi, Zap, History, Signal, SlidersHorizontal, Radio, ShieldCheck } from "lucide-react";
 import UpdateNotifier from "./UpdateNotifier";
 
-export type TabId = "speed" | "system" | "wifi" | "optimize" | "history" | "gaming" | "dns_bench" | "heatmap";
+export type TabId = "speed" | "system" | "wifi" | "optimize" | "history" | "dns_ping" | "dns_bench" | "heatmap";
 
 interface TabItem {
   id: TabId;
@@ -18,7 +18,7 @@ const TABS: TabItem[] = [
   { id: "wifi", label: "WiFi lân cận", sublabel: "Scanner & BSSID", icon: Wifi },
   { id: "optimize", label: "Tối ưu 1-chạm", sublabel: "DNS & UAC Tuning", icon: Zap },
   { id: "history", label: "Lịch sử & Driver", sublabel: "SQLite History", icon: History },
-  { id: "gaming", label: "Gaming Ping", sublabel: "Packet Loss & Jitter", icon: Gamepad2 },
+  { id: "dns_ping", label: "So sánh Ping DNS", sublabel: "Packet Loss & Jitter", icon: Signal },
   { id: "dns_bench", label: "DNS Benchmark", sublabel: "Fast Switcher", icon: SlidersHorizontal },
   { id: "heatmap", label: "Biểu đồ Tín hiệu", sublabel: "Channel Spectrum", icon: Radio },
 ];

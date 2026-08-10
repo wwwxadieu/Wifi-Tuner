@@ -2,29 +2,11 @@
 
 import { useState } from "react";
 import { SlidersHorizontal, Zap, CheckCircle2, RefreshCw, Trophy, Server, ShieldCheck } from "lucide-react";
-import type { DnsPresetKey, OptimizationSettings } from "@/lib/types";
-
-interface DnsItem {
-  id: string;
-  name: string;
-  primary: string;
-  secondary: string;
-  provider: string;
-}
-
-const DNS_LIST: DnsItem[] = [
-  { id: "cloudflare", name: "Cloudflare DNS", primary: "1.1.1.1", secondary: "1.0.0.1", provider: "Cloudflare" },
-  { id: "google", name: "Google Public DNS", primary: "8.8.8.8", secondary: "8.8.4.4", provider: "Google" },
-  { id: "quad9", name: "Quad9 Security", primary: "9.9.9.9", secondary: "149.112.112.112", provider: "Quad9" },
-  { id: "opendns", name: "OpenDNS Home", primary: "208.67.222.222", secondary: "208.67.220.220", provider: "Cisco" },
-  { id: "adguard", name: "AdGuard DNS (Chặn QC)", primary: "94.140.14.14", secondary: "94.140.15.15", provider: "AdGuard" },
-  { id: "viettel", name: "Viettel DNS", primary: "203.119.9.9", secondary: "203.119.9.10", provider: "Viettel ISP" },
-  { id: "vnpt", name: "VNPT DNS", primary: "203.162.4.190", secondary: "203.162.4.191", provider: "VNPT ISP" },
-  { id: "fpt", name: "FPT Telecom DNS", primary: "210.245.24.20", secondary: "210.245.24.22", provider: "FPT Telecom" },
-];
+import { KNOWN_DNS_PROVIDERS } from "@/lib/types";
+import type { KnownDnsProvider, OptimizationSettings } from "@/lib/types";
 
 interface BenchmarkResult {
-  dns: DnsItem;
+  dns: KnownDnsProvider;
   latencyMs: number | null;
   status: "fast" | "normal" | "slow" | "error";
 }
@@ -43,7 +25,7 @@ export default function DnsBenchmarkPanel() {
     const resList: BenchmarkResult[] = [];
 
     await Promise.all(
-      DNS_LIST.map(async (dns) => {
+      KNOWN_DNS_PROVIDERS.map(async (dns) => {
         try {
           const res = await fetch("/api/ping", {
             method: "POST",
@@ -77,13 +59,15 @@ export default function DnsBenchmarkPanel() {
     setRunning(false);
   };
 
-  const applyDns = async (dns: DnsItem) => {
+  const applyDns = async (dns: KnownDnsProvider) => {
     setApplying(true);
     setFeedback(`Đang áp dụng DNS ${dns.name} (${dns.primary})... Vui lòng xác nhận cửa sổ UAC của Windows.`);
 
     try {
+      // Luôn gửi preset "custom" kèm customDns — máy chủ ưu tiên dùng customDns
+      // khi có, nên không cần dnsPreset phải khớp đúng 1 trong 3 preset dựng sẵn.
       const settings: OptimizationSettings = {
-        dnsPreset: dns.id as DnsPresetKey,
+        dnsPreset: "custom",
         customDns: [dns.primary, dns.secondary],
         enableTcpTuning: true,
         disablePowerSave: true,

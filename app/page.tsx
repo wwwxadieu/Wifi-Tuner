@@ -7,7 +7,7 @@ import NetworkInfoPanel from "@/components/NetworkInfoPanel";
 import WifiScanPanel from "@/components/WifiScanPanel";
 import OptimizePanel from "@/components/OptimizePanel";
 import HistoryPanel from "@/components/HistoryPanel";
-import GamingPingPanel from "@/components/GamingPingPanel";
+import DnsPingPanel from "@/components/DnsPingPanel";
 import DnsBenchmarkPanel from "@/components/DnsBenchmarkPanel";
 import WifiHeatmapPanel from "@/components/WifiHeatmapPanel";
 
@@ -26,7 +26,7 @@ export default function Dashboard() {
         {tab === "wifi" && <WifiScanPanel />}
         {tab === "optimize" && <OptimizePanel />}
         {tab === "history" && <HistoryPanel />}
-        {tab === "gaming" && <GamingPingPanel />}
+        {tab === "dns_ping" && <DnsPingPanel />}
         {tab === "dns_bench" && <DnsBenchmarkPanel />}
         {tab === "heatmap" && <WifiHeatmapPanel />}
       </main>

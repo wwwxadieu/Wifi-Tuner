@@ -1,4 +1,5 @@
 import { connect } from "node:net";
+import { knownDnsIps } from "./types";
 import type { PingResult } from "./types";
 
 // Đo độ trễ bằng bắt tay TCP (không cần ICMP/quyền admin, hoạt động ổn định
@@ -7,14 +8,18 @@ import type { PingResult } from "./types";
 const DNS_PORT = 53;
 const CONNECT_TIMEOUT_MS = 2500;
 
-const PUBLIC_RESOLVERS = new Set(["1.1.1.1", "8.8.8.8", "9.9.9.9"]);
+// Danh sách IP cố định lấy từ lib/types.ts (KNOWN_DNS_PROVIDERS) — cùng một
+// nguồn dữ liệu được DnsBenchmarkPanel/DnsPingPanel dùng để hiển thị, nên
+// allowlist ở đây không bao giờ lệch với danh sách hiển thị trên UI nữa.
+const PUBLIC_RESOLVERS = new Set(knownDnsIps());
 const IPV4_RE = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 
 // Route API này nhận host từ client, nên giới hạn chặt để tránh bị lợi dụng
 // dò cổng/địa chỉ tuỳ ý (server chỉ chạy trên 127.0.0.1 nhưng vẫn nên phòng
-// thủ theo chiều sâu): chỉ chấp nhận 3 DNS công cộng đã biết, hoặc một IPv4
-// thuộc dải mạng riêng (LAN) — tức là DNS của router mà getNetworkInfo() trả
-// về. Cổng luôn cố định là 53, không cho client chọn cổng.
+// thủ theo chiều sâu): chỉ chấp nhận các DNS công cộng đã biết (danh sách cố
+// định, không phải input người dùng), hoặc một IPv4 thuộc dải mạng riêng
+// (LAN) — tức là DNS của router mà getNetworkInfo() trả về. Cổng luôn cố
+// định là 53, không cho client chọn cổng.
 export function isAllowedPingHost(host: string): boolean {
   if (PUBLIC_RESOLVERS.has(host)) return true;
   const match = host.match(IPV4_RE);
