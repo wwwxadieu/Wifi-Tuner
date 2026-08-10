@@ -2,16 +2,18 @@ interface StatCardProps {
   label: string;
   value: string;
   sub?: string;
-  highlight?: "accent" | "accent2" | "good" | "warn" | "bad";
+  highlight?: "accent" | "accent2" | "good" | "warn" | "bad" | "download" | "upload";
   loading?: boolean;
 }
 
 const HIGHLIGHT_CLASS: Record<NonNullable<StatCardProps["highlight"]>, string> = {
   accent: "text-accent",
   accent2: "text-accent2",
-  good: "text-good",
-  warn: "text-warn",
-  bad: "text-bad",
+  good: "text-emerald-400",
+  warn: "text-amber-400",
+  bad: "text-rose-400",
+  download: "text-emerald-400 font-bold",
+  upload: "text-rose-400 font-bold",
 };
 
 export default function StatCard({ label, value, sub, highlight, loading }: StatCardProps) {

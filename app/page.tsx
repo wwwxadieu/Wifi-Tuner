@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import TabNav, { type TabId } from "@/components/TabNav";
+import SidebarNav, { type TabId } from "@/components/SidebarNav";
 import SpeedTestPanel from "@/components/SpeedTestPanel";
 import NetworkInfoPanel from "@/components/NetworkInfoPanel";
 import WifiScanPanel from "@/components/WifiScanPanel";
 import OptimizePanel from "@/components/OptimizePanel";
 import HistoryPanel from "@/components/HistoryPanel";
-import UpdateNotifier from "@/components/UpdateNotifier";
 import GamingPingPanel from "@/components/GamingPingPanel";
 import DnsBenchmarkPanel from "@/components/DnsBenchmarkPanel";
 import WifiHeatmapPanel from "@/components/WifiHeatmapPanel";
@@ -16,19 +15,12 @@ export default function Dashboard() {
   const [tab, setTab] = useState<TabId>("speed");
 
   return (
-    <main className="mx-auto min-h-screen max-w-5xl px-6 py-10">
-      <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight">WiFi Tuner</h1>
-            <UpdateNotifier />
-          </div>
-          <p className="text-sm text-white/50">Chẩn đoán và tối ưu tốc độ WiFi cho Windows</p>
-        </div>
-        <TabNav active={tab} onChange={setTab} />
-      </header>
+    <div className="flex min-h-screen bg-ink text-white font-display overflow-x-hidden">
+      {/* Fixed Left Sidebar Navigation for Desktop Widescreen */}
+      <SidebarNav active={tab} onChange={setTab} />
 
-      <section>
+      {/* Main Content Stage */}
+      <main className="flex-1 min-w-0 p-8 md:p-10 max-w-7xl overflow-y-auto">
         {tab === "speed" && <SpeedTestPanel />}
         {tab === "system" && <NetworkInfoPanel />}
         {tab === "wifi" && <WifiScanPanel />}
@@ -37,7 +29,7 @@ export default function Dashboard() {
         {tab === "gaming" && <GamingPingPanel />}
         {tab === "dns_bench" && <DnsBenchmarkPanel />}
         {tab === "heatmap" && <WifiHeatmapPanel />}
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }

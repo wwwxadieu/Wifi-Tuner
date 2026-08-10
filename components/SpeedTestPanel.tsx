@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import SpeedTest, { type MeasurementSummary } from "@cloudflare/speedtest";
+import SpeedTest from "@cloudflare/speedtest";
+import { ArrowDown, ArrowUp, Zap, Play, RefreshCw, AlertCircle, Globe } from "lucide-react";
 import StatCard from "./StatCard";
 import RealtimeSpeedChart from "./RealtimeSpeedChart";
-import { SPEED_SERVERS, runFallbackSpeedProbe } from "@/lib/speedProbe";
+import { SPEED_SERVERS, runDetailedDownloadTest, runDetailedUploadTest, runFallbackSpeedProbe } from "@/lib/speedProbe";
 import type { SpeedServerRegion, SpeedUnit } from "@/lib/types";
 import { formatSpeed } from "@/lib/types";
 
 type Status = "idle" | "running" | "done" | "error";
 type Phase = "ping" | "download" | "upload" | "done";
+type TestType = "all" | "download" | "upload";
 
 interface HistoryEntry {
   at: string;
@@ -25,7 +27,7 @@ interface SamplePoint {
   uploadBps: number;
 }
 
-const HISTORY_KEY = "wifituner:speed-history-v2";
+const HISTORY_KEY = "wifituner:speed-history-v3";
 const UNIT_KEY = "wifituner:speed-unit";
 const REGION_KEY = "wifituner:speed-region";
 const HISTORY_LIMIT = 20;
@@ -49,6 +51,7 @@ function saveHistory(entries: HistoryEntry[]) {
 export default function SpeedTestPanel() {
   const [status, setStatus] = useState<Status>("idle");
   const [phase, setPhase] = useState<Phase>("ping");
+  const [testType, setTestType] = useState<TestType>("all");
   const [unit, setUnit] = useState<SpeedUnit>("Mbps");
   const [region, setRegion] = useState<SpeedServerRegion>("auto");
   const [error, setError] = useState<string | null>(null);
@@ -109,99 +112,78 @@ export default function SpeedTestPanel() {
     }).catch(() => {});
   };
 
-  const startFallbackTest = async () => {
-    try {
-      const startTime = Date.now();
-      const res = await runFallbackSpeedProbe(region, (prog) => {
-        setPhase(prog.phase);
-        if (prog.downloadBps !== undefined) setDownloadBps(prog.downloadBps);
-        if (prog.uploadBps !== undefined) setUploadBps(prog.uploadBps);
-        if (prog.latencyMs !== undefined) setLatency(prog.latencyMs);
-        if (prog.jitterMs !== undefined) setJitter(prog.jitterMs);
-
-        setSamples((prev) => [
-          ...prev,
-          {
-            time: (Date.now() - startTime) / 1000,
-            downloadBps: prog.downloadBps || 0,
-            uploadBps: prog.uploadBps || 0,
-          },
-        ]);
-      });
-
-      setDownloadBps(res.downloadBps);
-      setUploadBps(res.uploadBps);
-      setLatency(res.latencyMs);
-      setJitter(res.jitterMs);
-      setStatus("done");
-      setPhase("done");
-      saveResultToHistory(res.downloadBps, res.uploadBps, res.latencyMs, res.jitterMs);
-    } catch (err: any) {
-      setError(err.message || "Lỗi đo tốc độ qua máy chủ fallback.");
-      setStatus("error");
-    }
-  };
-
-  const start = () => {
+  const startTest = async (type: TestType) => {
+    setTestType(type);
     setStatus("running");
     setPhase("ping");
     setError(null);
-    setDownloadBps(null);
-    setUploadBps(null);
+    if (type === "all" || type === "download") setDownloadBps(null);
+    if (type === "all" || type === "upload") setUploadBps(null);
     setLatency(null);
     setJitter(null);
     setSamples([]);
 
-    if (region !== "auto") {
-      // Use Regional Fallback Probe
-      startFallbackTest();
-      return;
-    }
+    const startTime = Date.now();
 
-    // Try Cloudflare Engine first
     try {
-      const startTime = Date.now();
-      const engine = new SpeedTest();
+      if (type === "download") {
+        const dlRes = await runDetailedDownloadTest(region, (p) => {
+          setPhase(p.phase);
+          if (p.downloadBps !== undefined) setDownloadBps(p.downloadBps);
+          if (p.latencyMs !== undefined) setLatency(p.latencyMs);
+          if (p.jitterMs !== undefined) setJitter(p.jitterMs);
 
-      engine.onResultsChange = () => {
-        const sum = engine.results.getSummary();
-        if (sum.download) setDownloadBps(sum.download);
-        if (sum.upload) setUploadBps(sum.upload);
-        if (sum.latency) setLatency(sum.latency);
-        if (sum.jitter) setJitter(sum.jitter);
-
-        if (sum.download && !sum.upload) setPhase("download");
-        else if (sum.upload) setPhase("upload");
-
-        setSamples((prev) => [
-          ...prev,
-          {
-            time: (Date.now() - startTime) / 1000,
-            downloadBps: sum.download || 0,
-            uploadBps: sum.upload || 0,
-          },
-        ]);
-      };
-
-      engine.onFinish = (results) => {
-        const sum = results.getSummary();
-        setDownloadBps(sum.download ?? null);
-        setUploadBps(sum.upload ?? null);
-        setLatency(sum.latency ?? null);
-        setJitter(sum.jitter ?? null);
+          setSamples((prev) => [
+            ...prev,
+            { time: (Date.now() - startTime) / 1000, downloadBps: p.downloadBps || 0, uploadBps: 0 },
+          ]);
+        });
+        setDownloadBps(dlRes.downloadBps);
+        setLatency(dlRes.latencyMs);
+        setJitter(dlRes.jitterMs);
         setStatus("done");
-        setPhase("done");
+        saveResultToHistory(dlRes.downloadBps, null, dlRes.latencyMs, dlRes.jitterMs);
+      } else if (type === "upload") {
+        const ulRes = await runDetailedUploadTest(region, (p) => {
+          setPhase(p.phase);
+          if (p.uploadBps !== undefined) setUploadBps(p.uploadBps);
+          if (p.latencyMs !== undefined) setLatency(p.latencyMs);
+          if (p.jitterMs !== undefined) setJitter(p.jitterMs);
 
-        saveResultToHistory(sum.download ?? null, sum.upload ?? null, sum.latency ?? null, sum.jitter ?? null);
-      };
+          setSamples((prev) => [
+            ...prev,
+            { time: (Date.now() - startTime) / 1000, downloadBps: 0, uploadBps: p.uploadBps || 0 },
+          ]);
+        });
+        setUploadBps(ulRes.uploadBps);
+        setLatency(ulRes.latencyMs);
+        setJitter(ulRes.jitterMs);
+        setStatus("done");
+        saveResultToHistory(null, ulRes.uploadBps, ulRes.latencyMs, ulRes.jitterMs);
+      } else {
+        // Full Sequential Test
+        const res = await runFallbackSpeedProbe(region, (p) => {
+          setPhase(p.phase);
+          if (p.downloadBps !== undefined) setDownloadBps(p.downloadBps);
+          if (p.uploadBps !== undefined) setUploadBps(p.uploadBps);
+          if (p.latencyMs !== undefined) setLatency(p.latencyMs);
+          if (p.jitterMs !== undefined) setJitter(p.jitterMs);
 
-      engine.onError = (msg) => {
-        console.warn("Cloudflare engine error, switching to HTTP Fallback Probe:", msg);
-        // Switch automatically to Fallback Probe
-        startFallbackTest();
-      };
-    } catch {
-      startFallbackTest();
+          setSamples((prev) => [
+            ...prev,
+            { time: (Date.now() - startTime) / 1000, downloadBps: p.downloadBps || 0, uploadBps: p.uploadBps || 0 },
+          ]);
+        });
+        setDownloadBps(res.downloadBps);
+        setUploadBps(res.uploadBps);
+        setLatency(res.latencyMs);
+        setJitter(res.jitterMs);
+        setStatus("done");
+        saveResultToHistory(res.downloadBps, res.uploadBps, res.latencyMs, res.jitterMs);
+      }
+    } catch (err: any) {
+      setError(err.message || "Lỗi đo tốc độ.");
+      setStatus("error");
     }
   };
 
@@ -212,48 +194,75 @@ export default function SpeedTestPanel() {
       {/* Header Controls */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">Speed Test Tốc Độ Mạng</h2>
+          <h2 className="text-xl font-bold text-white">Speed Test Tốc Độ Mạng</h2>
           <p className="text-sm text-white/50">
-            Đo tốc độ download/upload, độ trễ và jitter với biểu đồ thời gian thực.
+            Tách riêng bài đo Download & Upload chuyên sâu với biểu đồ thời gian thực.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Unit Selector */}
-          <div className="flex items-center gap-1 rounded-full border border-hair bg-panel p-1 text-xs">
-            {(["Mbps", "MB/s", "Kbps"] as SpeedUnit[]).map((u) => (
-              <button
-                key={u}
-                onClick={() => handleUnitChange(u)}
-                className={`rounded-full px-3 py-1 font-semibold transition ${
-                  unit === u ? "bg-white/10 text-white" : "text-white/50 hover:text-white/80"
-                }`}
-              >
-                {u}
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={start}
-            disabled={status === "running"}
-            className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-ink transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {status === "running" ? "Đang đo…" : status === "idle" ? "Bắt đầu đo" : "Đo lại"}
-          </button>
+        {/* Unit Selector */}
+        <div className="flex items-center gap-1 rounded-full border border-hair bg-panel p-1.5 text-xs">
+          <span className="text-white/40 px-2 font-medium">Đơn vị:</span>
+          {(["Mbps", "MB/s", "Kbps"] as SpeedUnit[]).map((u) => (
+            <button
+              key={u}
+              onClick={() => handleUnitChange(u)}
+              className={`rounded-full px-3.5 py-1 font-bold transition ${
+                unit === u ? "bg-indigo-600 text-white shadow-md" : "text-white/50 hover:text-white"
+              }`}
+            >
+              {u}
+            </button>
+          ))}
         </div>
       </div>
 
+      {/* 3 Separate Test Action Buttons */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {/* Download Test Button (Green) */}
+        <button
+          onClick={() => startTest("download")}
+          disabled={status === "running"}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-600/90 to-teal-600/90 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
+        >
+          <ArrowDown className="h-4 w-4" />
+          <span>🟩 Đo Download (6 giây)</span>
+        </button>
+
+        {/* Upload Test Button (Red) */}
+        <button
+          onClick={() => startTest("upload")}
+          disabled={status === "running"}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-rose-500/40 bg-gradient-to-r from-rose-600/90 to-pink-600/90 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-rose-600/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
+        >
+          <ArrowUp className="h-4 w-4" />
+          <span>🟥 Đo Upload (6 giây)</span>
+        </button>
+
+        {/* Full Test Button (Blue/Indigo) */}
+        <button
+          onClick={() => startTest("all")}
+          disabled={status === "running"}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-indigo-500/40 bg-gradient-to-r from-indigo-600 to-blue-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
+        >
+          <Zap className="h-4 w-4 fill-current" />
+          <span>🚀 Đo Toàn Diện (Full)</span>
+        </button>
+      </div>
+
       {/* Region / Server Selector */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-hair bg-panel p-3">
-        <span className="text-xs font-semibold text-white/60 mr-2">Máy chủ đo:</span>
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-hair bg-panel p-4">
+        <span className="text-xs font-semibold text-white/60 mr-2 flex items-center gap-1.5">
+          <Globe className="h-4 w-4 text-cyan-400" />
+          <span>Máy chủ đo:</span>
+        </span>
         {SPEED_SERVERS.map((srv) => (
           <button
             key={srv.id}
             onClick={() => handleRegionChange(srv.id)}
-            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
               region === srv.id
-                ? "border-cyan-500 bg-cyan-500/10 text-cyan-300"
+                ? "border-cyan-500 bg-cyan-500/10 text-cyan-300 shadow-md"
                 : "border-hair bg-black/20 text-white/60 hover:text-white hover:border-white/20"
             }`}
           >
@@ -264,24 +273,27 @@ export default function SpeedTestPanel() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-bad/30 bg-bad/10 px-4 py-3 text-sm text-bad flex items-center justify-between">
-          <span>⚠️ {error}</span>
-          <button onClick={start} className="underline text-xs hover:text-white">Thử lại</button>
+        <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-300 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+            <span>{error}</span>
+          </div>
+          <button onClick={() => startTest("all")} className="underline text-xs hover:text-white">Thử lại</button>
         </div>
       )}
 
-      {/* Stat Cards */}
+      {/* Stat Cards - Download = Green, Upload = Red */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard
           label={`Download (${unit})`}
           value={formatSpeed(downloadBps, unit)}
-          highlight="accent"
+          highlight="download"
           loading={status === "running" && phase === "download"}
         />
         <StatCard
           label={`Upload (${unit})`}
           value={formatSpeed(uploadBps, unit)}
-          highlight="accent2"
+          highlight="upload"
           loading={status === "running" && phase === "upload"}
         />
         <StatCard
@@ -297,20 +309,26 @@ export default function SpeedTestPanel() {
       </div>
 
       {/* Realtime Speed Waveform Chart */}
-      <RealtimeSpeedChart samples={samples} unit={unit} status={status} phase={phase} />
+      <RealtimeSpeedChart samples={samples} unit={unit} status={status} phase={phase} testType={testType} />
 
       {/* Recent History Table */}
       {recentHistory.length > 0 && (
-        <div className="rounded-2xl border border-hair bg-panel p-4">
-          <h3 className="mb-3 text-sm font-medium text-white/70">Lịch sử đo gần đây ({unit})</h3>
+        <div className="rounded-2xl border border-hair bg-panel p-5 space-y-3">
+          <h3 className="text-sm font-semibold text-white/80">Lịch sử đo gần đây ({unit})</h3>
           <div className="space-y-2 text-sm">
             {recentHistory.map((entry) => (
-              <div key={entry.at} className="flex items-center justify-between text-white/60 border-b border-hair/40 pb-1.5 last:border-0">
+              <div key={entry.at} className="flex items-center justify-between text-white/60 border-b border-hair/40 pb-2 last:border-0">
                 <span className="text-white/40 font-mono text-xs">
                   {new Date(entry.at).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}
                 </span>
-                <span className="text-cyan-400 font-medium">↓ {formatSpeed(entry.downloadBps, unit)}</span>
-                <span className="text-indigo-400 font-medium">↑ {formatSpeed(entry.uploadBps, unit)}</span>
+                <span className="text-emerald-400 font-bold flex items-center gap-1">
+                  <ArrowDown className="h-3.5 w-3.5" />
+                  {formatSpeed(entry.downloadBps, unit)}
+                </span>
+                <span className="text-rose-400 font-bold flex items-center gap-1">
+                  <ArrowUp className="h-3.5 w-3.5" />
+                  {formatSpeed(entry.uploadBps, unit)}
+                </span>
                 <span className="text-white/80">{entry.latency !== null ? `${entry.latency} ms` : "—"}</span>
               </div>
             ))}
