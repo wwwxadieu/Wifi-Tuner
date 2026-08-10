@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Sparkles, Zap, CheckCircle2, PackageCheck, RefreshCw, AlertCircle } from "lucide-react";
 
 interface UpdateState {
   status: "idle" | "checking" | "available" | "downloading" | "downloaded" | "not-available" | "error";
@@ -32,14 +33,12 @@ export default function UpdateNotifier() {
   const [currentVersion, setCurrentVersion] = useState("0.1.0");
 
   useEffect(() => {
-    // Check if running inside Electron
     if (typeof window !== "undefined" && window.wifituner?.onUpdateStatus) {
       const cleanup = window.wifituner.onUpdateStatus((data) => {
         setUpdateState(data);
       });
       return cleanup;
     } else {
-      // Fallback web version check
       fetch("/api/updater")
         .then((res) => res.json())
         .then((data) => {
@@ -95,20 +94,27 @@ export default function UpdateNotifier() {
 
       {/* Status Notifications */}
       {updateState.status === "checking" && (
-        <span className="text-xs text-white/50 animate-pulse">Đang kiểm tra bản cập nhật…</span>
+        <span className="flex items-center gap-1.5 text-xs text-white/50 animate-pulse">
+          <RefreshCw className="h-3.5 w-3.5 animate-spin text-cyan-400" />
+          <span>Đang kiểm tra bản cập nhật…</span>
+        </span>
       )}
 
       {updateState.status === "not-available" && (
-        <span className="text-xs text-emerald-400 font-medium">✓ Đã ở phiên bản mới nhất</span>
+        <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          <span>Đã ở phiên bản mới nhất</span>
+        </span>
       )}
 
       {updateState.status === "available" && (
         <div className="flex items-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-3 py-1.5 text-xs text-white">
           <span>Có bản mới <b>v{updateState.version}</b></span>
-          <span className={`rounded-md px-2 py-0.5 font-semibold text-[10px] ${
+          <span className={`flex items-center gap-1 rounded-md px-2 py-0.5 font-semibold text-[10px] ${
             updateState.isDifferential ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
           }`}>
-            {updateState.isDifferential ? "⚡ Bản vá nhanh" : "📦 Bản cập nhật lớn"}
+            {updateState.isDifferential ? <Zap className="h-3 w-3" /> : <PackageCheck className="h-3 w-3" />}
+            {updateState.isDifferential ? "Bản vá nhanh" : "Bản cập nhật lớn"}
           </span>
         </div>
       )}
@@ -133,7 +139,8 @@ export default function UpdateNotifier() {
           onClick={handleInstall}
           className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-semibold text-white shadow-lg transition hover:scale-105 active:scale-95"
         >
-          ✨ Cài đặt & Khởi động lại
+          <Sparkles className="h-3.5 w-3.5" />
+          <span>Cài đặt & Khởi động lại</span>
         </button>
       )}
 
@@ -141,9 +148,10 @@ export default function UpdateNotifier() {
       {(updateState.status === "idle" || updateState.status === "error") && (
         <button
           onClick={handleCheck}
-          className="text-xs text-white/50 hover:text-white/90 transition underline underline-offset-4"
+          className="flex items-center gap-1.5 text-xs text-white/50 hover:text-white/90 transition underline underline-offset-4"
         >
-          Kiểm tra bản cập nhật
+          {updateState.status === "error" && <AlertCircle className="h-3.5 w-3.5 text-rose-400" />}
+          <span>Kiểm tra bản cập nhật</span>
         </button>
       )}
     </div>

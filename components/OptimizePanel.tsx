@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Zap, CheckCircle2, ShieldAlert, RotateCcw, Server, Info, ShieldCheck, SlidersHorizontal, RefreshCw, Power } from "lucide-react";
 import type { DnsPresetKey, OptimizationSettings, OptimizationStatusResult } from "@/lib/types";
 import StatCard from "./StatCard";
 
@@ -107,14 +108,15 @@ export default function OptimizePanel() {
   return (
     <div className="space-y-8 animate-fade-up">
       {status?.platform === "mock" && (
-        <div className="rounded-xl border border-warn/30 bg-warn/10 px-4 py-3 text-sm text-warn">
-          Chạy trên môi trường không phải Windows — thao tác tối ưu sẽ sử dụng dữ liệu mô phỏng.
+        <div className="flex items-center gap-2 rounded-xl border border-warn/30 bg-warn/10 px-4 py-3 text-sm text-warn">
+          <Info className="h-4 w-4 shrink-0" />
+          <span>Chạy trên môi trường không phải Windows — thao tác tối ưu sẽ sử dụng dữ liệu mô phỏng.</span>
         </div>
       )}
 
       {feedback && (
         <div
-          className={`rounded-xl border px-4 py-3 text-sm transition-all ${
+          className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm transition-all ${
             feedback.type === "good"
               ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
               : feedback.type === "bad"
@@ -122,7 +124,8 @@ export default function OptimizePanel() {
               : "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
           }`}
         >
-          {feedback.msg}
+          {feedback.type === "good" ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : feedback.type === "bad" ? <ShieldAlert className="h-4 w-4 shrink-0" /> : <RefreshCw className="h-4 w-4 shrink-0 animate-spin" />}
+          <span>{feedback.msg}</span>
         </div>
       )}
 
@@ -130,8 +133,9 @@ export default function OptimizePanel() {
       <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-950/40 via-panel to-panel p-6 shadow-2xl backdrop-blur-md">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-400">
-              ⚡ Tối Ưu Hệ Thống
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-400">
+              <Zap className="h-3.5 w-3.5" />
+              <span>Tối Ưu Hệ Thống</span>
             </div>
             <h2 className="text-2xl font-bold tracking-tight text-white">Tối ưu WiFi 1-Chạm</h2>
             <p className="text-sm text-white/60 max-w-xl">
@@ -147,12 +151,13 @@ export default function OptimizePanel() {
             >
               {executing ? (
                 <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Đang xử lý UAC…
+                  <RefreshCw className="h-4 w-4 animate-spin text-white" />
+                  <span>Đang xử lý UAC…</span>
                 </>
               ) : (
                 <>
-                  <span>🚀 Tối Ưu Ngay</span>
+                  <Zap className="h-4 w-4 fill-current" />
+                  <span>Tối Ưu Ngay</span>
                 </>
               )}
             </button>
@@ -161,9 +166,10 @@ export default function OptimizePanel() {
               <button
                 onClick={handleRestore}
                 disabled={executing}
-                className="text-xs text-white/50 hover:text-rose-400 transition underline underline-offset-4"
+                className="flex items-center gap-1.5 text-xs text-white/50 hover:text-rose-400 transition underline underline-offset-4"
               >
-                🔄 Khôi phục cấu hình cũ ({new Date(status.backup.createdAt).toLocaleDateString("vi-VN")})
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Khôi phục cấu hình cũ ({new Date(status.backup.createdAt).toLocaleDateString("vi-VN")})</span>
               </button>
             )}
           </div>
@@ -201,9 +207,12 @@ export default function OptimizePanel() {
 
         {/* DNS Selection */}
         <div className="rounded-xl border border-hair bg-panel p-5 space-y-4">
-          <div>
-            <h4 className="text-sm font-medium text-white/90">1. Chọn máy chủ DNS mục tiêu</h4>
-            <p className="text-xs text-white/50">Đổi DNS giúp tăng tốc độ tải trang web và vượt rào cản phân giải tên miền.</p>
+          <div className="flex items-center gap-2">
+            <Server className="h-4 w-4 text-cyan-400" />
+            <div>
+              <h4 className="text-sm font-medium text-white/90">1. Chọn máy chủ DNS mục tiêu</h4>
+              <p className="text-xs text-white/50">Đổi DNS giúp tăng tốc độ tải trang web và vượt rào cản phân giải tên miền.</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -239,7 +248,10 @@ export default function OptimizePanel() {
             }`}
           >
             <div className="space-y-1">
-              <span className="font-semibold text-sm">2. Tinh chỉnh TCP Auto-Tuning (Normal)</span>
+              <div className="flex items-center gap-2 font-semibold text-sm">
+                <SlidersHorizontal className="h-4 w-4 text-emerald-400" />
+                <span>2. Tinh chỉnh TCP Auto-Tuning (Normal)</span>
+              </div>
               <p className="text-xs text-white/50">Tự động tối ưu kích thước Receive Window buffer cho mạng tốc độ cao.</p>
             </div>
             <input
@@ -260,7 +272,10 @@ export default function OptimizePanel() {
             }`}
           >
             <div className="space-y-1">
-              <span className="font-semibold text-sm">3. Tắt tiết kiệm điện Card WiFi</span>
+              <div className="flex items-center gap-2 font-semibold text-sm">
+                <Power className="h-4 w-4 text-emerald-400" />
+                <span>3. Tắt tiết kiệm điện Card WiFi</span>
+              </div>
               <p className="text-xs text-white/50">Ngăn không cho Windows tắt tạm thời Card WiFi để giữ Ping ổn định.</p>
             </div>
             <input
@@ -275,7 +290,10 @@ export default function OptimizePanel() {
 
       {/* Note about Admin elevation */}
       <footer className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-xs text-white/40 space-y-1">
-        <p className="font-semibold text-white/60">ℹ️ Lưu ý về quyền Administrator & Sao lưu:</p>
+        <div className="flex items-center gap-1.5 font-semibold text-white/60">
+          <ShieldCheck className="h-4 w-4 text-indigo-400" />
+          <span>Lưu ý về quyền Administrator & Sao lưu:</span>
+        </div>
         <p>- Các thao tác đổi DNS/TCP/Card mạng trên Windows cần quyền Quản trị viên (Admin).</p>
         <p>- Cửa sổ Windows UAC sẽ xuất hiện khi bấm tối ưu. Hãy chọn <b>Yes</b> để tiếp tục.</p>
         <p>- Bản sao lưu cấu hình cũ luôn được lưu lại an toàn để bạn khôi phục bất kỳ lúc nào.</p>
