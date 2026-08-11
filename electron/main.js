@@ -101,11 +101,41 @@ function startServer() {
   return waitForServer(Date.now() + 40000);
 }
 
+// Màn hình khởi động (splash) hiển thị qua data:text/html trước khi server
+// Next.js kịp chạy — không có Tailwind/asset ngoài ở giai đoạn này nên mọi
+// CSS/màu/animation viết tay, nhưng dùng đúng token màu + easing của app
+// (tailwind.config.ts: accent #0a84ff, accent2 #64d2ff, cubic-bezier(.16,1,
+// .3,1)) và tái dùng nguyên vẹn glyph SVG của icon app (build/icon.png) để
+// đồng bộ hình ảnh với icon taskbar/tray thật.
 function loadingHtml() {
-  return `<!doctype html><html><body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#050507;color:#f5f5f7;font-family:Segoe UI,-apple-system,sans-serif;">
+  return `<!doctype html><html><head><style>
+    @keyframes iconIn { 0% { opacity:0; transform:scale(.82); } 100% { opacity:1; transform:scale(1); } }
+    @keyframes fadeUp { 0% { opacity:0; transform:translateY(16px); } 100% { opacity:1; transform:translateY(0); } }
+    @keyframes dotPulse { 0%,80%,100% { opacity:.25; transform:scale(.72); } 40% { opacity:1; transform:scale(1); } }
+    .splash-icon { animation: iconIn .6s cubic-bezier(.16,1,.3,1) both; }
+    .splash-title { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) .18s both; }
+    .splash-status { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) .3s both; }
+    .splash-dots { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) .38s both; }
+    .splash-dot { animation: dotPulse 1.2s ease-in-out infinite; }
+    .splash-dot:nth-child(2) { animation-delay: .15s; }
+    .splash-dot:nth-child(3) { animation-delay: .3s; }
+  </style></head>
+  <body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse 60% 50% at 50% 42%, rgba(10,132,255,.16) 0%, rgba(5,5,7,0) 70%), #050507;color:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;">
     <div style="text-align:center;">
-      <div style="font-size:15px;font-weight:600;letter-spacing:.02em;">WiFi Tuner</div>
-      <div style="margin-top:10px;font-size:13px;color:rgba(242,245,248,.5);">Đang khởi động…</div>
+      <div class="splash-icon" style="width:88px;height:88px;margin:0 auto;border-radius:20px;background:linear-gradient(135deg,#0a84ff 0%,#64d2ff 100%);box-shadow:0 12px 40px rgba(10,132,255,.35);display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 100 100" width="52" height="52" fill="none">
+          <circle cx="50" cy="78" r="7.5" fill="white"/>
+          <path d="M 28 58 A 31 31 0 0 1 72 58" stroke="white" stroke-width="9" stroke-linecap="round"/>
+          <path d="M 12 40 A 54 54 0 0 1 88 40" stroke="white" stroke-width="9" stroke-linecap="round" opacity="0.62"/>
+        </svg>
+      </div>
+      <div class="splash-title" style="margin-top:22px;font-size:17px;font-weight:600;letter-spacing:.01em;">WiFi Tuner</div>
+      <div class="splash-status" style="margin-top:8px;font-size:13px;color:rgba(245,245,247,.5);">Đang khởi động…</div>
+      <div class="splash-dots" style="margin-top:14px;display:flex;gap:6px;align-items:center;justify-content:center;">
+        <span class="splash-dot" style="width:6px;height:6px;border-radius:50%;background:#64d2ff;display:inline-block;"></span>
+        <span class="splash-dot" style="width:6px;height:6px;border-radius:50%;background:#64d2ff;display:inline-block;"></span>
+        <span class="splash-dot" style="width:6px;height:6px;border-radius:50%;background:#64d2ff;display:inline-block;"></span>
+      </div>
     </div>
   </body></html>`;
 }
@@ -121,13 +151,20 @@ function errorHtml(message) {
         serverStderr.join("\n")
       )}</pre>`
     : "";
-  return `<!doctype html><html><body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#050507;color:#f5f5f7;font-family:Segoe UI,-apple-system,sans-serif;padding:40px;box-sizing:border-box;">
-    <div style="max-width:620px;text-align:center;">
+  return `<!doctype html><html><head><style>
+    @keyframes fadeUp { 0% { opacity:0; transform:translateY(12px); } 100% { opacity:1; transform:translateY(0); } }
+    .error-card { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) both; }
+  </style></head>
+  <body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#050507;color:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;padding:40px;box-sizing:border-box;">
+    <div class="error-card" style="max-width:620px;width:100%;text-align:center;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);border-radius:20px;padding:32px;box-sizing:border-box;">
+      <div style="width:52px;height:52px;margin:0 auto 18px;border-radius:50%;background:rgba(255,69,58,.15);border:1px solid rgba(255,69,58,.3);display:flex;align-items:center;justify-content:center;">
+        <span style="color:#ff453a;font-size:24px;font-weight:700;line-height:1;">!</span>
+      </div>
       <div style="font-size:17px;font-weight:600;">Không thể khởi động WiFi Tuner</div>
-      <div style="margin-top:12px;font-size:13px;line-height:1.6;color:rgba(242,245,248,.6);">${safe}</div>
+      <div style="margin-top:12px;font-size:13px;line-height:1.6;color:rgba(245,245,247,.6);">${safe}</div>
       ${details}
-      <div style="margin-top:20px;font-size:12px;color:rgba(242,245,248,.35);">Log chi tiết: ${escapeHtml(logPath)}</div>
-      <div style="margin-top:6px;font-size:12px;color:rgba(242,245,248,.35);">Thử tắt tạm phần mềm diệt virus rồi mở lại ứng dụng.</div>
+      <div style="margin-top:20px;font-size:12px;color:rgba(245,245,247,.35);">Log chi tiết: ${escapeHtml(logPath)}</div>
+      <div style="margin-top:6px;font-size:12px;color:rgba(245,245,247,.35);">Thử tắt tạm phần mềm diệt virus rồi mở lại ứng dụng.</div>
     </div>
   </body></html>`;
 }
