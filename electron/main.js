@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, Menu, Tray, dialog, ipcMain, shell } = require("electron");
 const { autoUpdater } = require("electron-updater");
 const fs = require("fs");
 const path = require("path");
@@ -14,8 +14,17 @@ const ALLOWED_EXTERNAL_SCHEMES = ["https:", "http:", "ms-settings:"];
 
 let serverProcess = null;
 let mainWindow = null;
+let tray = null;
 let serverExited = null;
+let isQuitting = false;
+let hasShownTrayHint = false;
 const serverStderr = [];
+
+// Icon đóng gói kèm build (khai báo ở package.json -> extraResources cho
+// bản đã package; đọc trực tiếp từ build/ khi chạy dev).
+function getAssetPath(filename) {
+  return app.isPackaged ? path.join(process.resourcesPath, filename) : path.join(__dirname, "..", "build", filename);
+}
 
 const logPath = path.join(app.getPath("userData"), "wifituner.log");
 function log(...args) {
@@ -132,6 +141,7 @@ function createWindow() {
     backgroundColor: "#050507",
     title: "WiFi Tuner",
     autoHideMenuBar: true,
+    icon: getAssetPath("icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -141,9 +151,86 @@ function createWindow() {
   });
 
   mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(loadingHtml())}`);
+
+  // Bấm nút đóng (X) chỉ ẩn cửa sổ xuống khay hệ thống thay vì thoát hẳn —
+  // cần thiết để tính năng đo tốc độ tự động theo lịch tiếp tục chạy được
+  // khi người dùng "đóng" app. Chỉ thoát thật khi chọn "Thoát" từ menu khay
+  // hoặc khi hệ thống/updater chủ động yêu cầu quit (isQuitting = true).
+  mainWindow.on("close", (event) => {
+    if (isQuitting) return;
+    event.preventDefault();
+    mainWindow.hide();
+    if (!hasShownTrayHint) {
+      hasShownTrayHint = true;
+      tray?.displayBalloon?.({
+        title: "WiFi Tuner vẫn đang chạy",
+        content: "Ứng dụng đã được ẩn xuống khay hệ thống để tiếp tục đo tốc độ tự động theo lịch. Nhấp icon khay để mở lại.",
+      });
+    }
+  });
+
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
+}
+
+function createTray() {
+  tray = new Tray(getAssetPath("tray-icon.png"));
+  tray.setToolTip("WiFi Tuner");
+  updateTrayMenu();
+
+  tray.on("click", () => {
+    if (!mainWindow) return;
+    if (mainWindow.isVisible()) {
+      mainWindow.focus();
+    } else {
+      mainWindow.show();
+    }
+  });
+}
+
+function updateTrayMenu() {
+  if (!tray) return;
+  const openAtLogin = app.isPackaged ? app.getLoginItemSettings().openAtLogin : false;
+
+  const menu = Menu.buildFromTemplate([
+    {
+      label: "Mở WiFi Tuner",
+      click: () => {
+        mainWindow?.show();
+        mainWindow?.focus();
+      },
+    },
+    {
+      label: "Đo tốc độ ngay",
+      click: () => {
+        mainWindow?.show();
+        mainWindow?.focus();
+        mainWindow?.webContents.send("tray-run-speedtest");
+      },
+    },
+    { type: "separator" },
+    {
+      label: "Chạy cùng Windows",
+      type: "checkbox",
+      checked: openAtLogin,
+      enabled: app.isPackaged,
+      click: (menuItem) => {
+        app.setLoginItemSettings({ openAtLogin: menuItem.checked, path: process.execPath });
+        updateTrayMenu();
+      },
+    },
+    { type: "separator" },
+    {
+      label: "Thoát",
+      click: () => {
+        isQuitting = true;
+        app.quit();
+      },
+    },
+  ]);
+
+  tray.setContextMenu(menu);
 }
 
 function broadcastUpdateStatus(data) {
@@ -246,6 +333,18 @@ ipcMain.handle("quit-and-install", () => {
   }
 });
 
+ipcMain.handle("get-auto-launch-status", () => {
+  if (!app.isPackaged) return false;
+  return app.getLoginItemSettings().openAtLogin;
+});
+
+ipcMain.handle("toggle-auto-launch", (_event, enable) => {
+  if (!app.isPackaged) return false;
+  app.setLoginItemSettings({ openAtLogin: !!enable, path: process.execPath });
+  updateTrayMenu();
+  return app.getLoginItemSettings().openAtLogin;
+});
+
 ipcMain.handle("open-external", (_event, url) => {
   try {
     const parsed = new URL(url);
@@ -265,6 +364,7 @@ app.whenReady().then(async () => {
   log("App starting. Packaged:", app.isPackaged, "Platform:", process.platform);
   Menu.setApplicationMenu(null);
   createWindow();
+  createTray();
   setupAutoUpdater();
 
   try {
@@ -287,6 +387,7 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
+  isQuitting = true;
   if (serverProcess) {
     serverProcess.kill();
     serverProcess = null;

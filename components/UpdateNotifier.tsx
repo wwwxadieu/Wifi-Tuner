@@ -2,31 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Sparkles, Zap, CheckCircle2, PackageCheck, RefreshCw, AlertCircle } from "lucide-react";
-
-interface UpdateState {
-  status: "idle" | "checking" | "available" | "downloading" | "downloaded" | "not-available" | "error";
-  version?: string;
-  isDifferential?: boolean;
-  percent?: number;
-  transferred?: number;
-  total?: number;
-  bytesPerSecond?: number;
-  error?: string;
-}
-
-declare global {
-  interface Window {
-    wifituner?: {
-      platform: string;
-      isElectron: boolean;
-      openExternal: (url: string) => Promise<boolean>;
-      checkForUpdates: () => Promise<any>;
-      downloadUpdate: () => Promise<boolean>;
-      quitAndInstall: () => void;
-      onUpdateStatus: (callback: (data: UpdateState) => void) => () => void;
-    };
-  }
-}
+import type { UpdateState } from "@/types/electron";
 
 export default function UpdateNotifier() {
   const [updateState, setUpdateState] = useState<UpdateState>({ status: "idle" });

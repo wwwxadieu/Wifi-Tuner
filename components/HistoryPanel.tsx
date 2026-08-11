@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldAlert, CheckCircle2, Info, ExternalLink, Trash2, Calendar, Clock, ArrowDown, ArrowUp, Cpu, History } from "lucide-react";
+import { ShieldAlert, CheckCircle2, Info, ExternalLink, Trash2, Calendar, Clock, ArrowDown, ArrowUp, Cpu, History, Power } from "lucide-react";
 import type { SpeedHistoryRecord, SpeedStats } from "@/lib/db";
 import type { DriverAnalysisResult } from "@/lib/driverCheck";
 import StatCard from "./StatCard";
@@ -15,6 +15,12 @@ export default function HistoryPanel() {
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  // Chỉ tồn tại khi chạy trong Electron (điều khiển qua electron/main.js) —
+  // ẩn hẳn toggle này khi chạy bằng trình duyệt thường (dev trên Linux/macOS).
+  const [autoLaunchSupported, setAutoLaunchSupported] = useState(false);
+  const [autoLaunch, setAutoLaunch] = useState(false);
+  const [autoLaunchBusy, setAutoLaunchBusy] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -43,7 +49,26 @@ export default function HistoryPanel() {
 
   useEffect(() => {
     fetchData();
+
+    if (typeof window !== "undefined" && window.wifituner?.getAutoLaunchStatus) {
+      setAutoLaunchSupported(true);
+      window.wifituner
+        .getAutoLaunchStatus()
+        .then(setAutoLaunch)
+        .catch(() => {});
+    }
   }, []);
+
+  const handleToggleAutoLaunch = async () => {
+    if (!window.wifituner?.toggleAutoLaunch) return;
+    setAutoLaunchBusy(true);
+    try {
+      const next = await window.wifituner.toggleAutoLaunch(!autoLaunch);
+      setAutoLaunch(next);
+    } finally {
+      setAutoLaunchBusy(false);
+    }
+  };
 
   const handleScheduleChange = async (newInterval: string) => {
     setSchedule(newInterval);
@@ -189,6 +214,26 @@ export default function HistoryPanel() {
             ))}
           </div>
         </div>
+
+        {autoLaunchSupported && (
+          <div
+            onClick={handleToggleAutoLaunch}
+            className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition-all ${
+              autoLaunch ? "border-good/40 bg-good/5 text-white" : "border-hair bg-black/20 text-white/50 hover:border-white/20"
+            } ${autoLaunchBusy ? "opacity-50 pointer-events-none" : ""}`}
+          >
+            <div className="flex items-center gap-2">
+              <Power className={`h-4 w-4 ${autoLaunch ? "text-good" : "text-white/40"}`} />
+              <div>
+                <span className="text-sm font-semibold">Chạy cùng Windows</span>
+                <p className="text-xs text-white/50">
+                  Tự khởi động WiFi Tuner (ẩn xuống khay hệ thống) khi đăng nhập Windows, để lịch đo tự động luôn hoạt động.
+                </p>
+              </div>
+            </div>
+            <input type="checkbox" checked={autoLaunch} onChange={() => {}} className="h-5 w-5 rounded border-hair bg-black/40 text-good focus:ring-0" />
+          </div>
+        )}
       </section>
 
       {/* Speed Test Statistics */}

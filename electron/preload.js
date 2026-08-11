@@ -12,4 +12,11 @@ contextBridge.exposeInMainWorld("wifituner", {
     ipcRenderer.on("update-status", handler);
     return () => ipcRenderer.removeListener("update-status", handler);
   },
+  getAutoLaunchStatus: () => ipcRenderer.invoke("get-auto-launch-status"),
+  toggleAutoLaunch: (enable) => ipcRenderer.invoke("toggle-auto-launch", enable),
+  onTrayRunSpeedTest: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on("tray-run-speedtest", handler);
+    return () => ipcRenderer.removeListener("tray-run-speedtest", handler);
+  },
 });
