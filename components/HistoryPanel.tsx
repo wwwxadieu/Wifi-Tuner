@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldAlert, CheckCircle2, Info, ExternalLink, Trash2, Calendar, Clock, ArrowDown, ArrowUp, Cpu, History, Power } from "lucide-react";
+import { ShieldAlert, CheckCircle2, Info, ExternalLink, Trash2, Calendar, Clock, ArrowDown, ArrowUp, Cpu, History, Power, FileDown } from "lucide-react";
 import type { SpeedHistoryRecord, SpeedStats } from "@/lib/db";
 import type { DriverAnalysisResult } from "@/lib/driverCheck";
+import type { NetworkInfo, OptimizationStatusResult, AdvancedOptimizationStatusResult } from "@/lib/types";
 import StatCard from "./StatCard";
 import HistoryTrendChart from "./HistoryTrendChart";
+
+const STATUS_LABEL: Record<string, string> = {
+  optimized: "Đã tối ưu",
+  suboptimal: "Chưa tối ưu",
+  unknown: "Không xác định",
+};
+
+function line(label: string, value: string): string {
+  return `${label.padEnd(28, " ")}: ${value}`;
+}
 
 export default function HistoryPanel() {
   const [history, setHistory] = useState<SpeedHistoryRecord[]>([]);
@@ -22,6 +33,7 @@ export default function HistoryPanel() {
   const [autoLaunchSupported, setAutoLaunchSupported] = useState(false);
   const [autoLaunch, setAutoLaunch] = useState(false);
   const [autoLaunchBusy, setAutoLaunchBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -103,6 +115,95 @@ export default function HistoryPanel() {
       setMsg("Lỗi khi xóa lịch sử.");
     } finally {
       setClearing(false);
+    }
+  };
+
+  // Gộp dữ liệu từ các API chẩn đoán đã có (không gọi PowerShell trực tiếp,
+  // chỉ đọc lại các route sẵn có) thành 1 báo cáo text — dùng để lưu lại
+  // hoặc gửi cho người hỗ trợ kỹ thuật/ISP khi cần đối chiếu.
+  const handleExportReport = async () => {
+    setExporting(true);
+    try {
+      const [netRes, optRes, advRes] = await Promise.all([
+        fetch("/api/network-info").then((r) => (r.ok ? r.json() : null)) as Promise<NetworkInfo | null>,
+        fetch("/api/optimize").then((r) => (r.ok ? r.json() : null)) as Promise<OptimizationStatusResult | null>,
+        fetch("/api/advanced-optimize").then((r) => (r.ok ? r.json() : null)) as Promise<AdvancedOptimizationStatusResult | null>,
+      ]);
+
+      const now = new Date();
+      const lines: string[] = [];
+      lines.push("=".repeat(56));
+      lines.push("BÁO CÁO CHẨN ĐOÁN WIFI TUNER");
+      lines.push(`Xuất lúc: ${now.toLocaleString("vi-VN")}`);
+      lines.push("=".repeat(56));
+
+      lines.push("");
+      lines.push("-- CARD MẠNG WIFI --");
+      if (netRes?.adapter) {
+        lines.push(line("Tên adapter", netRes.adapter.name || "—"));
+        lines.push(line("Trạng thái", netRes.adapter.status || "—"));
+        lines.push(line("Tốc độ liên kết", netRes.adapter.linkSpeed || "—"));
+        lines.push(line("Driver", `${netRes.adapter.driverVersion || "—"} (${netRes.adapter.driverDate || "—"})`));
+        lines.push(line("Hãng driver", netRes.adapter.driverProvider || "—"));
+      } else {
+        lines.push("Không đọc được thông tin adapter.");
+      }
+      lines.push(line("DNS hiện tại", netRes?.dns?.length ? netRes.dns.join(", ") : "—"));
+
+      lines.push("");
+      lines.push("-- TỐI ƯU CƠ BẢN --");
+      lines.push(line("Tổng trạng thái", optRes?.isOptimized ? "Đã tối ưu" : "Chưa tối ưu đầy đủ"));
+      lines.push(line("DNS", STATUS_LABEL[optRes?.dnsStatus ?? "unknown"]));
+      lines.push(line("TCP Auto-Tuning", STATUS_LABEL[optRes?.tcpStatus ?? "unknown"]));
+      lines.push(line("Tiết kiệm điện Card WiFi", STATUS_LABEL[optRes?.powerStatus ?? "unknown"]));
+
+      lines.push("");
+      lines.push("-- TỐI ƯU NÂNG CAO --");
+      lines.push(line("RSS (Receive Side Scaling)", STATUS_LABEL[advRes?.rssStatus ?? "unknown"]));
+      lines.push(line("TCP Congestion Provider", STATUS_LABEL[advRes?.congestionStatus ?? "unknown"]));
+      lines.push(line("Delivery Optimization P2P", STATUS_LABEL[advRes?.doStatus ?? "unknown"]));
+
+      lines.push("");
+      lines.push("-- DRIVER --");
+      lines.push(line("Phiên bản", driver?.adapter?.driverVersion || "—"));
+      lines.push(line("Ngày phát hành", driver?.adapter?.driverDate || "—"));
+      lines.push(line("Đánh giá", driver?.statusText || "—"));
+
+      lines.push("");
+      lines.push("-- THỐNG KÊ TỐC ĐỘ --");
+      lines.push(line("Tổng số lần đo", stats?.totalTests ? String(stats.totalTests) : "0"));
+      lines.push(line("Download trung bình", stats?.avgDownload ? `${stats.avgDownload} Mbps` : "—"));
+      lines.push(line("Upload trung bình", stats?.avgUpload ? `${stats.avgUpload} Mbps` : "—"));
+      lines.push(line("Ping tốt nhất", stats?.bestLatency ? `${stats.bestLatency} ms` : "—"));
+      lines.push(line("Ping tệ nhất", stats?.worstLatency ? `${stats.worstLatency} ms` : "—"));
+
+      if (history.length > 0) {
+        lines.push("");
+        lines.push(`-- ${Math.min(history.length, 20)} LẦN ĐO GẦN NHẤT --`);
+        history.slice(0, 20).forEach((r) => {
+          const t = new Date(r.createdAt).toLocaleString("vi-VN");
+          lines.push(
+            `${t} | DL ${r.downloadMbps ?? "—"} Mbps | UL ${r.uploadMbps ?? "—"} Mbps | Ping ${r.latencyMs ?? "—"} ms | Jitter ${r.jitterMs ?? "—"} ms | ${r.source === "scheduled" ? "Tự động" : "Thủ công"}`
+          );
+        });
+      }
+
+      lines.push("");
+      lines.push("=".repeat(56));
+
+      const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `wifituner-baocao-${now.toISOString().slice(0, 10)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      setMsg("Lỗi khi tạo báo cáo.");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -241,16 +342,26 @@ export default function HistoryPanel() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">Thống kê tổng quan</h3>
-          {history.length > 0 && (
+          <div className="flex items-center gap-4">
             <button
-              onClick={handleClearHistory}
-              disabled={clearing}
-              className="flex items-center gap-1 text-xs text-bad hover:underline"
+              onClick={handleExportReport}
+              disabled={exporting}
+              className="flex items-center gap-1 text-xs text-accent2 hover:underline disabled:opacity-50"
             >
-              <Trash2 className="h-3.5 w-3.5" />
-              <span>Xóa lịch sử đo</span>
+              <FileDown className="h-3.5 w-3.5" />
+              <span>{exporting ? "Đang tạo báo cáo…" : "Xuất báo cáo"}</span>
             </button>
-          )}
+            {history.length > 0 && (
+              <button
+                onClick={handleClearHistory}
+                disabled={clearing}
+                className="flex items-center gap-1 text-xs text-bad hover:underline"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Xóa lịch sử đo</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
