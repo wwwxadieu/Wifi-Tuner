@@ -290,12 +290,16 @@ export default function SpeedTestPanel() {
           label={`Download (${unit})`}
           value={formatSpeed(downloadBps, unit)}
           highlight="download"
+          icon={ArrowDown}
+          iconMotion="bounce-down"
           loading={status === "running" && phase === "download"}
         />
         <StatCard
           label={`Upload (${unit})`}
           value={formatSpeed(uploadBps, unit)}
           highlight="upload"
+          icon={ArrowUp}
+          iconMotion="bounce-up"
           loading={status === "running" && phase === "upload"}
         />
         <StatCard
