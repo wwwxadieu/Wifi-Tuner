@@ -295,7 +295,7 @@ export default function AdvancedOptimizePanel() {
               </div>
               <p className="text-xs text-white/50">Giảm nghẽn xử lý mạng khi tốc độ WiFi cao, đặc biệt hữu ích trên CPU nhiều lõi.</p>
             </div>
-            <input type="checkbox" checked={enableRss} onChange={() => {}} className="h-5 w-5 rounded border-hair bg-black/40 text-good focus:ring-0" />
+            <input type="checkbox" checked={enableRss} onChange={() => {}} className="h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-white/20 bg-black/30 transition-colors checked:border-good checked:bg-good focus:outline-none focus:ring-0" />
           </div>
 
           <div
@@ -311,7 +311,7 @@ export default function AdvancedOptimizePanel() {
               </div>
               <p className="text-xs text-white/50">Ngăn Windows Update tải/tải lên bản cập nhật từ các máy khác trên Internet, chiếm băng thông của bạn.</p>
             </div>
-            <input type="checkbox" checked={disableDoP2P} onChange={() => {}} className="h-5 w-5 rounded border-hair bg-black/40 text-good focus:ring-0" />
+            <input type="checkbox" checked={disableDoP2P} onChange={() => {}} className="h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-white/20 bg-black/30 transition-colors checked:border-good checked:bg-good focus:outline-none focus:ring-0" />
           </div>
         </div>
       </section>

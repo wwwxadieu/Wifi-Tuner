@@ -9,6 +9,18 @@ export default function UpdateNotifier() {
   const [currentVersion, setCurrentVersion] = useState("0.1.0");
 
   useEffect(() => {
+    // Luôn đọc /api/updater để lấy currentVersion thật từ package.json đóng
+    // gói cùng bản build — trước đây bước này chỉ chạy khi KHÔNG có
+    // window.wifituner (tức chỉ khi chạy ngoài Electron), nên khi chạy
+    // trong app thật, số hiệu phiên bản hiển thị bị kẹt mãi ở giá trị khởi
+    // tạo "0.1.0", không khớp bản đã cài.
+    fetch("/api/updater")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.currentVersion) setCurrentVersion(data.currentVersion);
+      })
+      .catch(() => {});
+
     if (typeof window !== "undefined" && window.wifituner?.onUpdateStatus) {
       const cleanup = window.wifituner.onUpdateStatus((data) => {
         setUpdateState(data);
@@ -18,7 +30,6 @@ export default function UpdateNotifier() {
       fetch("/api/updater")
         .then((res) => res.json())
         .then((data) => {
-          if (data.currentVersion) setCurrentVersion(data.currentVersion);
           if (data.isUpdateAvailable) {
             setUpdateState({
               status: "available",

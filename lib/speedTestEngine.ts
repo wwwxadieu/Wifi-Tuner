@@ -10,6 +10,13 @@ export interface FullSpeedTestResult {
   jitterMs: number;
 }
 
+// SDK Cloudflare trả latency/jitter dạng số thực với rất nhiều chữ số thập
+// phân (vd. 58.14999999999418) — làm tròn về 1 chữ số thập phân cho dễ đọc,
+// khớp quy ước hiển thị ms đã dùng ở các nơi khác trong app (lib/ping.ts).
+function roundMs(value: number | undefined): number | undefined {
+  return value === undefined ? undefined : Math.round(value * 10) / 10;
+}
+
 // Đo tốc độ toàn diện (download+upload+latency+jitter) bằng SDK chính thức
 // của Cloudflare — engine chính vì có tính toán theo percentile và đo packet
 // loss, đáng tin hơn nhiều so với vòng lặp fetch tự viết.
@@ -23,8 +30,8 @@ function runOfficialSpeedTest(onProgress: (p: LiveProgress) => void): Promise<Fu
         phase: s.upload !== undefined ? "upload" : s.download !== undefined ? "download" : "ping",
         downloadBps: s.download,
         uploadBps: s.upload,
-        latencyMs: s.latency,
-        jitterMs: s.jitter,
+        latencyMs: roundMs(s.latency),
+        jitterMs: roundMs(s.jitter),
         percent: 50,
       });
     };
@@ -35,8 +42,8 @@ function runOfficialSpeedTest(onProgress: (p: LiveProgress) => void): Promise<Fu
         phase: "done",
         downloadBps: s.download,
         uploadBps: s.upload,
-        latencyMs: s.latency,
-        jitterMs: s.jitter,
+        latencyMs: roundMs(s.latency),
+        jitterMs: roundMs(s.jitter),
         percent: 100,
       });
       if (s.download === undefined && s.upload === undefined) {
@@ -46,8 +53,8 @@ function runOfficialSpeedTest(onProgress: (p: LiveProgress) => void): Promise<Fu
       resolve({
         downloadBps: s.download ?? 0,
         uploadBps: s.upload ?? 0,
-        latencyMs: s.latency ?? 0,
-        jitterMs: s.jitter ?? 0,
+        latencyMs: roundMs(s.latency) ?? 0,
+        jitterMs: roundMs(s.jitter) ?? 0,
       });
     };
 

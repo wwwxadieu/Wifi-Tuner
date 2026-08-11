@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Zap, AlertCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, Zap, AlertCircle, Timer, Activity } from "lucide-react";
 import StatCard from "./StatCard";
 import RealtimeSpeedChart from "./RealtimeSpeedChart";
 import { runDetailedDownloadTest, runDetailedUploadTest, type LiveProgress } from "@/lib/speedProbe";
@@ -195,7 +195,7 @@ export default function SpeedTestPanel() {
           className="flex items-center justify-center gap-2 rounded-2xl border border-good/40 bg-gradient-to-r from-good/90 to-accent2/90 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-good/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
         >
           <ArrowDown className="h-4 w-4" />
-          <span>🟩 Đo Download (6 giây)</span>
+          <span>Đo Download (6 giây)</span>
         </button>
 
         <button
@@ -204,7 +204,7 @@ export default function SpeedTestPanel() {
           className="flex items-center justify-center gap-2 rounded-2xl border border-upload/40 bg-gradient-to-r from-upload/90 to-accent2/90 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-upload/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
         >
           <ArrowUp className="h-4 w-4" />
-          <span>🔵 Đo Upload (6 giây)</span>
+          <span>Đo Upload (6 giây)</span>
         </button>
 
         <button
@@ -213,7 +213,7 @@ export default function SpeedTestPanel() {
           className="flex items-center justify-center gap-2 rounded-2xl border border-accent/40 bg-gradient-to-r from-accent to-accent2 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-accent/20 transition hover:scale-105 active:scale-95 disabled:opacity-50"
         >
           <Zap className="h-4 w-4 fill-current" />
-          <span>🚀 Đo Toàn Diện (Full)</span>
+          <span>Đo Toàn Diện (Full)</span>
         </button>
       </div>
 
@@ -248,11 +248,13 @@ export default function SpeedTestPanel() {
         <StatCard
           label="Độ trễ (ping)"
           value={latency !== null ? `${latency} ms` : "—"}
+          icon={Timer}
           loading={status === "running" && phase === "ping"}
         />
         <StatCard
           label="Jitter"
           value={jitter !== null ? `${jitter} ms` : "—"}
+          icon={Activity}
           loading={status === "running" && phase === "ping"}
         />
       </div>

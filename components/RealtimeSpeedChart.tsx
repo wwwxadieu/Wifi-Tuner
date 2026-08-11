@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowDown, ArrowUp, Loader2 } from "lucide-react";
 import type { SpeedUnit } from "@/lib/types";
 import { convertSpeed } from "@/lib/types";
 
@@ -80,8 +81,28 @@ export default function RealtimeSpeedChart({ samples, unit, status, phase, testT
         </div>
 
         {status === "running" && (
-          <span className="rounded-full bg-accent/20 border border-accent/40 px-3 py-1 text-xs font-bold text-accent animate-pulse">
-            {phase === "ping" ? "Đang kiểm tra Ping..." : phase === "download" ? "🟩 Đang đo Download..." : phase === "upload" ? "🔵 Đang đo Upload..." : "Đang xử lý..."}
+          <span className="flex items-center gap-1.5 rounded-full bg-accent/20 border border-accent/40 px-3 py-1 text-xs font-bold text-accent">
+            {phase === "ping" ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Đang kiểm tra Ping...</span>
+              </>
+            ) : phase === "download" ? (
+              <>
+                <ArrowDown className="h-3.5 w-3.5 text-download" />
+                <span>Đang đo Download...</span>
+              </>
+            ) : phase === "upload" ? (
+              <>
+                <ArrowUp className="h-3.5 w-3.5 text-upload" />
+                <span>Đang đo Upload...</span>
+              </>
+            ) : (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Đang xử lý...</span>
+              </>
+            )}
           </span>
         )}
       </div>

@@ -82,7 +82,7 @@ export default function DnsBenchmarkPanel() {
 
       const data = await res.json();
       if (res.ok) {
-        setFeedback(`✓ Đã áp dụng thành công DNS ${dns.name} (${dns.primary})!`);
+        setFeedback(`Đã áp dụng thành công DNS ${dns.name} (${dns.primary})!`);
       } else {
         setFeedback(`Lỗi: ${data.error || "Không thể đổi DNS."}`);
       }

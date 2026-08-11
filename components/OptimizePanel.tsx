@@ -258,7 +258,7 @@ export default function OptimizePanel() {
               type="checkbox"
               checked={enableTcp}
               onChange={() => {}}
-              className="h-5 w-5 rounded border-hair bg-black/40 text-good focus:ring-0"
+              className="h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-white/20 bg-black/30 transition-colors checked:border-good checked:bg-good focus:outline-none focus:ring-0"
             />
           </div>
 
@@ -282,7 +282,7 @@ export default function OptimizePanel() {
               type="checkbox"
               checked={disablePowerSave}
               onChange={() => {}}
-              className="h-5 w-5 rounded border-hair bg-black/40 text-good focus:ring-0"
+              className="h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-white/20 bg-black/30 transition-colors checked:border-good checked:bg-good focus:outline-none focus:ring-0"
             />
           </div>
         </div>

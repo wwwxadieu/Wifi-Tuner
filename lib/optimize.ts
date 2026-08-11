@@ -206,31 +206,51 @@ async function executeElevatedScript(
 `
     : "";
 
+  // Ghi kết quả bằng [System.IO.File]::WriteAllText + UTF8Encoding($false) thay
+  // vì Set-Content -Encoding UTF8 — cmdlet đó chèn thêm BOM (byte-order-mark) ở
+  // đầu file trên Windows PowerShell 5.1, khiến Node đọc phải chuỗi bắt đầu bằng
+  // ký tự không in được và JSON.parse phía dưới báo lỗi "Unexpected token".
   const fullScript = `
 $ErrorActionPreference = 'Stop'
 $resultFile = "${resultPath.replace(/\\/g, "\\\\")}"
 $paramsFile = "${paramsPath.replace(/\\/g, "\\\\")}"
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
 
 try {
   $p = Get-Content -Path $paramsFile -Raw | ConvertFrom-Json
 ${adapterBlock}
 ${scriptBody}
 
-  @{ success = $true; message = 'Thao tác hoàn tất thành công.' } | ConvertTo-Json -Compress | Set-Content -Path $resultFile -Encoding UTF8
+  $json = @{ success = $true; message = 'Thao tác hoàn tất thành công.' } | ConvertTo-Json -Compress
+  [System.IO.File]::WriteAllText($resultFile, $json, $utf8NoBom)
 } catch {
-  @{ success = $false; error = $_.Exception.Message } | ConvertTo-Json -Compress | Set-Content -Path $resultFile -Encoding UTF8
+  $json = @{ success = $false; error = $_.Exception.Message } | ConvertTo-Json -Compress
+  [System.IO.File]::WriteAllText($resultFile, $json, $utf8NoBom)
 }
   `.trim();
 
   fs.writeFileSync(scriptPath, fullScript, "utf-8");
 
   try {
-    const cmd = `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Start-Process powershell.exe -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File \\"${scriptPath}\\"' -Verb RunAs -Wait"`;
+    // -WindowStyle Hidden để không hiện cửa sổ PowerShell nhấp nháy khi thao
+    // tác chạy — cửa sổ xác nhận UAC của Windows vẫn hiện bình thường (đó là
+    // cơ chế bảo mật của hệ điều hành, không thể/không nên ẩn).
+    const cmd = `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Start-Process powershell.exe -ArgumentList '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \\"${scriptPath}\\"' -Verb RunAs -WindowStyle Hidden -Wait"`;
     await execAsync(cmd, { timeout: 45000 });
 
     if (fs.existsSync(resultPath)) {
-      const resText = fs.readFileSync(resultPath, "utf-8");
-      const res = JSON.parse(resText);
+      // Loại bỏ BOM (nếu còn sót từ phiên bản cũ) + khoảng trắng, rồi chỉ lấy
+      // đúng phần {...} đầu tiên — phòng trường hợp có ký tự thừa bao quanh
+      // JSON hợp lệ (antivirus chèn log, encoding lệch...), tránh crash toàn
+      // bộ thao tác chỉ vì vài ký tự rác ở đầu/cuối file kết quả.
+      const rawWithBom = fs.readFileSync(resultPath, "utf-8");
+      const raw = (rawWithBom.charCodeAt(0) === 0xfeff ? rawWithBom.slice(1) : rawWithBom).trim();
+      const firstBrace = raw.indexOf("{");
+      const lastBrace = raw.lastIndexOf("}");
+      if (firstBrace === -1 || lastBrace === -1) {
+        return { success: false, error: "Không đọc được kết quả từ script PowerShell." };
+      }
+      const res = JSON.parse(raw.slice(firstBrace, lastBrace + 1));
       return res;
     } else {
       return { success: false, error: "Người dùng đã hủy xác thực UAC hoặc thao tác bị gián đoạn." };
