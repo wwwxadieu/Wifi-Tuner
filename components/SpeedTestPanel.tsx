@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Zap, AlertCircle, Timer, Activity } from "lucide-react";
+import { ArrowDown, ArrowUp, Zap, AlertCircle, Timer, Activity, ShieldAlert } from "lucide-react";
 import StatCard from "./StatCard";
 import RealtimeSpeedChart from "./RealtimeSpeedChart";
 import { runDetailedDownloadTest, runDetailedUploadTest, type LiveProgress } from "@/lib/speedProbe";
@@ -62,11 +62,19 @@ export default function SpeedTestPanel() {
 
   const [samples, setSamples] = useState<SamplePoint[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [vpnAdapterNames, setVpnAdapterNames] = useState<string[]>([]);
 
   useEffect(() => {
     setHistory(loadHistory());
     const savedUnit = localStorage.getItem(UNIT_KEY) as SpeedUnit;
     if (savedUnit && ["Mbps", "MB/s", "Kbps"].includes(savedUnit)) setUnit(savedUnit);
+
+    fetch("/api/vpn-status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.detected) setVpnAdapterNames(data.adapterNames || []);
+      })
+      .catch(() => {});
   }, []);
 
   const handleUnitChange = (newUnit: SpeedUnit) => {
@@ -186,6 +194,15 @@ export default function SpeedTestPanel() {
           ))}
         </div>
       </div>
+
+      {vpnAdapterNames.length > 0 && (
+        <div className="flex items-center gap-2 rounded-xl border border-warn/30 bg-warn/10 px-4 py-3 text-sm text-warn">
+          <ShieldAlert className="h-4 w-4 shrink-0" />
+          <span>
+            Phát hiện dấu hiệu VPN đang bật ({vpnAdapterNames.join(", ")}) — kết quả đo có thể không phản ánh đúng tốc độ Internet thực tế từ nhà mạng, vì lưu lượng đang đi qua máy chủ VPN.
+          </span>
+        </div>
+      )}
 
       {/* 3 Separate Test Action Buttons */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

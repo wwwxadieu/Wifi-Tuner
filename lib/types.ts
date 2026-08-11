@@ -30,6 +30,15 @@ export interface NetworkInfo {
   fetchedAt: string;
 }
 
+// Kết quả suy đoán VPN đang bật (heuristic theo tên driver adapter, không
+// phải phát hiện chắc chắn 100%) — xem lib/vpnDetect.ts.
+export interface VpnStatus {
+  platform: DataSource;
+  detected: boolean;
+  adapterNames: string[];
+  fetchedAt: string;
+}
+
 export type WifiBand = "2.4GHz" | "5GHz" | "6GHz" | "unknown";
 
 export interface WifiNetwork {
