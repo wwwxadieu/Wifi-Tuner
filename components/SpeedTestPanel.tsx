@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import SpeedTest from "@cloudflare/speedtest";
 import { ArrowDown, ArrowUp, Zap, AlertCircle } from "lucide-react";
 import StatCard from "./StatCard";
 import RealtimeSpeedChart from "./RealtimeSpeedChart";
-import { runDetailedDownloadTest, runDetailedUploadTest, runFallbackSpeedProbe, type LiveProgress } from "@/lib/speedProbe";
+import { runDetailedDownloadTest, runDetailedUploadTest, type LiveProgress } from "@/lib/speedProbe";
+import { runFullSpeedTest } from "@/lib/speedTestEngine";
 import type { SpeedUnit } from "@/lib/types";
 import { formatSpeed } from "@/lib/types";
 
@@ -45,57 +45,6 @@ function saveHistory(entries: HistoryEntry[]) {
   try {
     window.localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(-HISTORY_LIMIT)));
   } catch {}
-}
-
-// Đo tốc độ toàn diện (download+upload+latency+jitter) bằng SDK chính thức của
-// Cloudflare — engine chính vì có tính toán theo percentile và đo packet loss,
-// đáng tin hơn nhiều so với vòng lặp fetch tự viết. `runFallbackSpeedProbe`
-// trong lib/speedProbe.ts chỉ dùng khi SDK này lỗi (ví dụ WebRTC/TURN bị chặn).
-function runOfficialSpeedTest(onProgress: (p: LiveProgress) => void): Promise<{
-  downloadBps: number;
-  uploadBps: number;
-  latencyMs: number;
-  jitterMs: number;
-}> {
-  return new Promise((resolve, reject) => {
-    const engine = new SpeedTest();
-
-    engine.onResultsChange = () => {
-      const s = engine.results.getSummary();
-      onProgress({
-        phase: s.upload !== undefined ? "upload" : s.download !== undefined ? "download" : "ping",
-        downloadBps: s.download,
-        uploadBps: s.upload,
-        latencyMs: s.latency,
-        jitterMs: s.jitter,
-        percent: 50,
-      });
-    };
-
-    engine.onFinish = (results) => {
-      const s = results.getSummary();
-      onProgress({
-        phase: "done",
-        downloadBps: s.download,
-        uploadBps: s.upload,
-        latencyMs: s.latency,
-        jitterMs: s.jitter,
-        percent: 100,
-      });
-      if (s.download === undefined && s.upload === undefined) {
-        reject(new Error("Không đo được tốc độ mạng."));
-        return;
-      }
-      resolve({
-        downloadBps: s.download ?? 0,
-        uploadBps: s.upload ?? 0,
-        latencyMs: s.latency ?? 0,
-        jitterMs: s.jitter ?? 0,
-      });
-    };
-
-    engine.onError = (message) => reject(new Error(message));
-  });
 }
 
 export default function SpeedTestPanel() {
@@ -194,13 +143,7 @@ export default function SpeedTestPanel() {
         setStatus("done");
         saveResultToHistory(null, res.uploadBps, res.latencyMs, res.jitterMs);
       } else {
-        let res;
-        try {
-          res = await runOfficialSpeedTest(onProgress);
-        } catch {
-          // SDK chính thức lỗi (ví dụ WebRTC/TURN bị chặn) — thử phương án dự phòng.
-          res = await runFallbackSpeedProbe(onProgress);
-        }
+        const res = await runFullSpeedTest(onProgress);
         setDownloadBps(res.downloadBps);
         setUploadBps(res.uploadBps);
         setLatency(res.latencyMs);

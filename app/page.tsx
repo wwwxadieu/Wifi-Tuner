@@ -13,6 +13,7 @@ import HistoryPanel from "@/components/HistoryPanel";
 import DnsPingPanel from "@/components/DnsPingPanel";
 import DnsBenchmarkPanel from "@/components/DnsBenchmarkPanel";
 import WifiHeatmapPanel from "@/components/WifiHeatmapPanel";
+import ScheduledSpeedTestRunner from "@/components/ScheduledSpeedTestRunner";
 
 const PANELS: Record<TabId, ComponentType> = {
   speed: SpeedTestPanel,
@@ -32,6 +33,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-ink text-white font-display">
+      <ScheduledSpeedTestRunner />
       <TopTabBar active={tab} onChange={setTab} />
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
