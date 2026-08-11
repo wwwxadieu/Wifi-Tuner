@@ -6,6 +6,7 @@ import { ShieldAlert, CheckCircle2, Info, ExternalLink, Trash2, Calendar, Clock,
 import type { SpeedHistoryRecord, SpeedStats } from "@/lib/db";
 import type { DriverAnalysisResult } from "@/lib/driverCheck";
 import StatCard from "./StatCard";
+import HistoryTrendChart from "./HistoryTrendChart";
 
 export default function HistoryPanel() {
   const [history, setHistory] = useState<SpeedHistoryRecord[]>([]);
@@ -259,6 +260,13 @@ export default function HistoryPanel() {
           <StatCard label="Ping tốt nhất" value={stats?.bestLatency ? `${stats.bestLatency} ms` : "—"} />
         </div>
       </section>
+
+      {/* Trend Chart */}
+      {history.length > 0 && (
+        <section className="space-y-3">
+          <HistoryTrendChart records={history} />
+        </section>
+      )}
 
       {/* History Timeline */}
       <section className="rounded-2xl border border-hair bg-panel p-6 space-y-4">
