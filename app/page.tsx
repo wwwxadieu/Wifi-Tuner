@@ -8,6 +8,7 @@ import SpeedTestPanel from "@/components/SpeedTestPanel";
 import NetworkInfoPanel from "@/components/NetworkInfoPanel";
 import WifiScanPanel from "@/components/WifiScanPanel";
 import OptimizePanel from "@/components/OptimizePanel";
+import AdvancedOptimizePanel from "@/components/AdvancedOptimizePanel";
 import HistoryPanel from "@/components/HistoryPanel";
 import DnsPingPanel from "@/components/DnsPingPanel";
 import DnsBenchmarkPanel from "@/components/DnsBenchmarkPanel";
@@ -18,6 +19,7 @@ const PANELS: Record<TabId, ComponentType> = {
   system: NetworkInfoPanel,
   wifi: WifiScanPanel,
   optimize: OptimizePanel,
+  advanced: AdvancedOptimizePanel,
   history: HistoryPanel,
   dns_ping: DnsPingPanel,
   dns_bench: DnsBenchmarkPanel,

@@ -63,11 +63,18 @@ export interface PingResult {
 
 export type DnsPresetKey = "cloudflare" | "google" | "quad9" | "dhcp" | "custom";
 
+// Các trường "advanced*" là tuỳ chọn (optional) để tương thích ngược với các
+// bản backup cũ được tạo trước khi có tính năng tinh chỉnh nâng cao — khi
+// đọc backup cũ thiếu trường này, logic khôi phục sẽ bỏ qua (không đổi)
+// thay vì áp giá trị sai.
 export interface BackupConfig {
   createdAt: string;
   dns: string[];
   tcpAutoTuning: string;
   powerAllowTurnOff: string | null;
+  rssEnabled?: boolean | null;
+  congestionProvider?: string | null;
+  deliveryOptimizationDownloadMode?: number | null;
 }
 
 export interface OptimizationSettings {
@@ -84,6 +91,45 @@ export interface OptimizationStatusResult {
   tcpStatus: "optimized" | "suboptimal" | "unknown";
   powerStatus: "optimized" | "suboptimal" | "unknown";
   backup: BackupConfig | null;
+}
+
+// Thuật toán kiểm soát nghẽn mạng TCP mà Windows hỗ trợ qua
+// Set-NetTCPSetting -CongestionProvider. CTCP (Compound TCP) tận dụng băng
+// thông tốt hơn NewReno/Default trên đường truyền băng thông cao, độ trễ lớn
+// (điển hình của WiFi/cáp quang) — đây là lựa chọn khuyến nghị của app.
+export type CongestionProviderKey = "Default" | "CTCP" | "NewReno" | "DCTCP";
+
+export interface AdvancedAdapterProperty {
+  displayName: string;
+  displayValue: string;
+}
+
+export interface AdvancedNetworkInfo {
+  platform: DataSource;
+  rssEnabled: boolean | null;
+  congestionProvider: string | null;
+  // Registry DODownloadMode của Windows Delivery Optimization: 0/99 = chỉ
+  // tải qua HTTP (tắt chia sẻ P2P), 1 = chỉ P2P trong LAN, 3 = P2P cả LAN
+  // lẫn Internet (mặc định, tốn băng thông upload nhiều nhất).
+  deliveryOptimizationDownloadMode: number | null;
+  advancedProperties: AdvancedAdapterProperty[];
+  fetchedAt: string;
+}
+
+export interface AdvancedOptimizationSettings {
+  enableRss: boolean;
+  congestionProvider: CongestionProviderKey;
+  disableDeliveryOptimizationP2P: boolean;
+}
+
+export interface AdvancedOptimizationStatusResult {
+  platform: DataSource;
+  isOptimized: boolean;
+  rssStatus: "optimized" | "suboptimal" | "unknown";
+  congestionStatus: "optimized" | "suboptimal" | "unknown";
+  doStatus: "optimized" | "suboptimal" | "unknown";
+  backup: BackupConfig | null;
+  advancedProperties: AdvancedAdapterProperty[];
 }
 
 export type SpeedUnit = "Mbps" | "MB/s" | "Kbps";

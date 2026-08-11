@@ -1,10 +1,19 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Gauge, Cpu, Wifi, Zap, History, Signal, SlidersHorizontal, Radio, ShieldCheck } from "lucide-react";
+import { Gauge, Cpu, Wifi, Zap, History, Signal, SlidersHorizontal, Radio, ShieldCheck, Rocket } from "lucide-react";
 import UpdateNotifier from "./UpdateNotifier";
 
-export type TabId = "speed" | "system" | "wifi" | "optimize" | "history" | "dns_ping" | "dns_bench" | "heatmap";
+export type TabId =
+  | "speed"
+  | "system"
+  | "wifi"
+  | "optimize"
+  | "advanced"
+  | "history"
+  | "dns_ping"
+  | "dns_bench"
+  | "heatmap";
 
 interface TabItem {
   id: TabId;
@@ -17,6 +26,7 @@ const TABS: TabItem[] = [
   { id: "system", label: "Hệ thống", icon: Cpu },
   { id: "wifi", label: "WiFi lân cận", icon: Wifi },
   { id: "optimize", label: "Tối ưu", icon: Zap },
+  { id: "advanced", label: "Nâng cao", icon: Rocket },
   { id: "history", label: "Lịch sử", icon: History },
   { id: "dns_ping", label: "Ping DNS", icon: Signal },
   { id: "dns_bench", label: "DNS Benchmark", icon: SlidersHorizontal },
